@@ -24,6 +24,10 @@ interface TrackedPersonDao {
     @Query("SELECT * FROM tracked_person ORDER BY addedAt DESC")
     fun observeAll(): Flow<List<TrackedPerson>>
 
+    /** TMDB ids of everyone on the list in at least one role. */
+    @Query("SELECT DISTINCT personId FROM tracked_person")
+    fun observeTrackedPersonIds(): Flow<List<Int>>
+
     @Query("SELECT COUNT(*) FROM tracked_person")
     fun observeCount(): Flow<Int>
 }

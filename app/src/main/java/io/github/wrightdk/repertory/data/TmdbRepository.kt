@@ -45,9 +45,11 @@ data class PersonSearchPage(
     val results: List<PersonSearchResult>,
     val page: Int,
     val totalPages: Int,
+    /** Across all pages, as TMDB counts them (before adult results are dropped). */
+    val totalResults: Int,
 ) {
     companion object {
-        val EMPTY = PersonSearchPage(emptyList(), page = 1, totalPages = 0)
+        val EMPTY = PersonSearchPage(emptyList(), page = 1, totalPages = 0, totalResults = 0)
     }
 }
 
@@ -90,6 +92,7 @@ class TmdbRepository(
                 },
                 page = response.page,
                 totalPages = response.totalPages,
+                totalResults = response.totalResults,
             )
         }
     }

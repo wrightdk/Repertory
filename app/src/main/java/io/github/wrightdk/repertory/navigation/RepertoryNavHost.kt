@@ -13,7 +13,6 @@ import io.github.wrightdk.repertory.ui.screens.HomeScreen
 import io.github.wrightdk.repertory.ui.screens.SearchScreen
 
 // Placeholder IDs so the skeleton can be walked end to end before real data exists.
-private const val SAMPLE_PERSON_ID = 138 // Quentin Tarantino on TMDB
 private const val SAMPLE_TRACKED_PERSON_ID = 1L
 private const val SAMPLE_FILM_ID = 680 // Pulp Fiction on TMDB
 
@@ -33,7 +32,7 @@ fun RepertoryNavHost() {
         composable<SearchRoute> {
             SearchScreen(
                 onBack = back,
-                onPersonSelected = { navController.navigate(AddPersonRoute(SAMPLE_PERSON_ID)) },
+                onPersonSelected = { personId -> navController.navigate(AddPersonRoute(personId)) },
             )
         }
         composable<AddPersonRoute> { entry ->

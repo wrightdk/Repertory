@@ -65,6 +65,7 @@ class TmdbRepositoryTest {
         val page = repo.searchPeople("  agnes varda ").getOrNull()!!
 
         assertEquals("agnes varda", tmdb.requests.single().url.queryParameter("query"))
+        assertEquals(1, page.totalResults)
         val varda = page.results.single()
         assertEquals(VARDA, varda.tmdbId)
         assertEquals("Directing", varda.knownForDepartment)

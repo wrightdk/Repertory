@@ -3,4 +3,24 @@
     <string name="back">Back</string>
     <string name="settings">Settings</string>
     <string name="open_in_browser">Opens in your browser</string>
+
+    <!-- Search -->
+    <string name="search_people_hint">Search people by name</string>
+    <string name="clear_search">Clear</string>
+    <string name="search_one_match">1 match</string>
+    <string name="search_matches">%1$s matches</string>
+    <string name="searching">Searching TMDB…</string>
+    <string name="on_list">On list</string>
+    <string name="search_no_results_title">No one called “%1$s”.</string>
+    <string name="search_no_results_body">Check the spelling, or try just the surname.</string>
+    <string name="search_load_more_failed">Couldn’t load more. Try again</string>
+    <string name="try_again">Try again</string>
+    <string name="search_error_offline_title">Can’t reach TMDB.</string>
+    <string name="search_error_offline_body">Check your connection and try again.</string>
+    <string name="search_error_key_title">Film data isn’t available right now.</string>
+    <string name="search_error_key_body">TMDB isn’t accepting this app’s key. You can use your own TMDB API key in Settings.</string>
+    <string name="search_error_busy_title">TMDB is busy.</string>
+    <string name="search_error_busy_body">Too many requests for now. Wait a minute and try again, or use your own TMDB API key in Settings.</string>
+    <string name="search_error_other_title">Search didn’t work.</string>
+    <string name="search_error_other_body">Something went wrong at TMDB. Try again in a moment.</string>
 </resources>

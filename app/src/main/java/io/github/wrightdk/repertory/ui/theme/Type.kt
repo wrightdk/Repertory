@@ -44,7 +44,8 @@ private fun newsreader(opticalSize: Float): FontFamily {
     return FontFamily(font(FontWeight.Normal), font(FontWeight.Medium))
 }
 
-private fun serif(size: Float, lineHeight: Float, weight: FontWeight = FontWeight.Normal, tracking: Float = 0f) =
+/** A Newsreader style with its optical size pinned to [size], for sizes between the scale's steps. */
+internal fun serif(size: Float, lineHeight: Float, weight: FontWeight = FontWeight.Normal, tracking: Float = 0f) =
     TextStyle(
         fontFamily = newsreader(size),
         fontWeight = weight,
