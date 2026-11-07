@@ -31,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -75,6 +74,7 @@ import java.text.NumberFormat
 fun SearchScreen(
     onBack: () -> Unit,
     onPersonSelected: (personId: Int) -> Unit,
+    onOpenApiKeySetting: () -> Unit,
 ) {
     val context = LocalContext.current
     val viewModel: SearchViewModel = viewModel(factory = SearchViewModel.factory(context.appContainer))
@@ -96,6 +96,7 @@ fun SearchScreen(
             keyboard?.hide()
             onPersonSelected(id)
         },
+        onOpenApiKeySetting = onOpenApiKeySetting,
     )
 }
 
@@ -109,6 +110,7 @@ private fun SearchScreen(
     onRetry: () -> Unit,
     onLoadMore: () -> Unit,
     onPersonSelected: (Int) -> Unit,
+    onOpenApiKeySetting: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -134,7 +136,7 @@ private fun SearchScreen(
                 is SearchContent.NoResults ->
                     if (state.loading) Searching() else NoResults(content.query)
                 is SearchContent.Error ->
-                    if (state.loading) Searching() else SearchError(content.error, onRetry)
+                    if (state.loading) Searching() else SearchError(content.error, onRetry, onOpenApiKeySetting)
                 SearchContent.Idle -> if (state.loading) Searching()
             }
         }
@@ -377,17 +379,11 @@ private fun NoResults(query: String) {
 }
 
 @Composable
-private fun SearchError(error: TmdbError, onRetry: () -> Unit) {
-    val (title, body) = when (error) {
-        TmdbError.NoNetwork -> R.string.search_error_offline_title to R.string.search_error_offline_body
-        TmdbError.InvalidApiKey -> R.string.search_error_key_title to R.string.search_error_key_body
-        TmdbError.RateLimited -> R.string.search_error_busy_title to R.string.search_error_busy_body
-        else -> R.string.search_error_other_title to R.string.search_error_other_body
-    }
+private fun SearchError(error: TmdbError, onRetry: () -> Unit, onOpenApiKeySetting: () -> Unit) {
+    val (title, body) = commonTmdbErrorCopy(error)
+        ?: (R.string.search_error_other_title to R.string.search_error_other_body)
     Message(title = stringResource(title), body = stringResource(body)) {
-        OutlinedButton(onClick = onRetry, modifier = Modifier.padding(top = MaterialTheme.spacing.md)) {
-            Text(stringResource(R.string.try_again))
-        }
+        TmdbErrorActions(error, onRetry, onOpenApiKeySetting)
     }
 }
 

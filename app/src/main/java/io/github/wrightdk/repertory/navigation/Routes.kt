@@ -25,5 +25,10 @@ data class FilmDetailRoute(val trackedPersonId: Long, val mediaType: String, val
 @Serializable
 data object AboutRoute
 
+/** A licence's full text; [kind] is a [io.github.wrightdk.repertory.ui.screens.LicenceKind] name. */
 @Serializable
-data object SettingsRoute
+data class LicenceRoute(val kind: String)
+
+/** Settings; with [editApiKey], opens straight onto the own TMDB key dialog (from a key error). */
+@Serializable
+data class SettingsRoute(val editApiKey: Boolean = false)

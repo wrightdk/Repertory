@@ -72,6 +72,50 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
+/**
+ * Bundles the licence texts shown on About as assets, copied from the repo's
+ * own LICENSE and third_party/ at build time so there's only one copy of each.
+ */
+abstract class CopyLicenceTexts : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val appLicence: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val newsreaderLicence: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val plexLicence: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val dir = outputDir.get().dir("licences").asFile
+        dir.deleteRecursively()
+        dir.mkdirs()
+        appLicence.get().asFile.copyTo(dir.resolve("gpl-3.0.txt"))
+        newsreaderLicence.get().asFile.copyTo(dir.resolve("ofl-newsreader.txt"))
+        plexLicence.get().asFile.copyTo(dir.resolve("ofl-ibm-plex-sans.txt"))
+    }
+}
+
+val copyLicenceTexts = tasks.register<CopyLicenceTexts>("copyLicenceTexts") {
+    val root = rootProject.layout.projectDirectory
+    appLicence.set(root.file("LICENSE"))
+    newsreaderLicence.set(root.file("third_party/fonts/newsreader/OFL.txt"))
+    plexLicence.set(root.file("third_party/fonts/ibm-plex-sans/OFL.txt"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(copyLicenceTexts, CopyLicenceTexts::outputDir)
+    }
+}
+
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

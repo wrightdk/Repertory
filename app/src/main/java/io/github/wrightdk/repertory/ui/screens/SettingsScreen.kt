@@ -1,5 +1,6 @@
 package io.github.wrightdk.repertory.ui.screens
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,9 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +38,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,13 +55,18 @@ import io.github.wrightdk.repertory.ui.theme.spacing
 
 /**
  * From design/settings-*.png: the filter defaults every list follows unless it
- * has its own, the theme, and About. The own-TMDB-key row comes later.
+ * has its own, the theme, and About. Plus the own TMDB key (not in the
+ * mockup), styled like the About row. [openApiKeyDialog] opens straight onto
+ * the key dialog, for the way in from a key error.
  */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit) {
-    val settings = LocalContext.current.appContainer.settings
+fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Boolean = false) {
+    val container = LocalContext.current.appContainer
+    val settings = container.settings
     val defaults by settings.filterDefaults.collectAsStateWithLifecycle()
     val theme by settings.themeMode.collectAsStateWithLifecycle()
+    val ownKey by settings.ownTmdbApiKey.collectAsStateWithLifecycle()
+    var keyDialogOpen by rememberSaveable { mutableStateOf(openApiKeyDialog) }
     val spacing = MaterialTheme.spacing
 
     Scaffold(
@@ -98,8 +108,31 @@ fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit) {
                 ThemePicker(theme, onPick = settings::setThemeMode)
             }
             HorizontalDivider(Modifier.padding(top = spacing.xl))
-            AboutRow(onAbout)
+            NavigationRow(
+                icon = R.drawable.ic_key,
+                label = stringResource(R.string.settings_own_key),
+                supporting = ownKey?.let { stringResource(R.string.settings_own_key_on, it.takeLast(4)) }
+                    ?: stringResource(R.string.settings_own_key_off),
+                onClick = { keyDialogOpen = true },
+            )
+            NavigationRow(icon = R.drawable.ic_info, label = stringResource(R.string.about), onClick = onAbout)
         }
+    }
+
+    if (keyDialogOpen) {
+        OwnApiKeyDialog(
+            current = ownKey,
+            check = container::checkTmdbApiKey,
+            onSave = { key ->
+                container.setOwnTmdbApiKey(key)
+                keyDialogOpen = false
+            },
+            onRemove = {
+                container.setOwnTmdbApiKey(null)
+                keyDialogOpen = false
+            },
+            onDismiss = { keyDialogOpen = false },
+        )
     }
 }
 
@@ -146,23 +179,33 @@ private fun ThemePicker(selected: ThemeMode, onPick: (ThemeMode) -> Unit) {
     }
 }
 
+/** The mockup's About row: icon, label (and optional supporting line), chevron. */
 @Composable
-private fun AboutRow(onClick: () -> Unit) {
+private fun NavigationRow(@DrawableRes icon: Int, label: String, onClick: () -> Unit, supporting: String? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = MaterialTheme.spacing.gutter, vertical = MaterialTheme.spacing.md)
             .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Icon(
-            painterResource(R.drawable.ic_info),
+            painterResource(icon),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(stringResource(R.string.about), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 20.8.sp))
+            if (supporting != null) {
+                Text(
+                    supporting,
+                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 16.9.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Icon(
             painterResource(R.drawable.ic_chevron_right),
             contentDescription = null,

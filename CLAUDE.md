@@ -114,9 +114,11 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
 8. **Settings**
    - "Show in lists": the filter defaults.
    - Theme: Light / Dark / System segmented button.
-   - "Use your own TMDB API key" item (not in the design; see TMDB section). Style it like the other rows.
+   - "Use your own TMDB API key" item (not in the design; see TMDB section), styled like the About row with an on/off line ("On. Key ending 1a2b."). Its dialog checks the key with TMDB before saving (`AppContainer.checkTmdbApiKey`) and catches a pasted v4 read access token; Remove goes back to the built-in key. Saving or removing retries any list whose details fetch stopped.
+   - Key errors (401, or 429 after retries) on Search, Add to your list and Filmography say so plainly and offer "Use your own key" ("Change your key" once one is set), which opens Settings with the key dialog up (`ui/screens/TmdbErrors.kt`).
    - About row.
-9. **About**: app icon and name, version, "A notebook for working through filmographies. No accounts, no ads, no tracking. Your list stays on this phone.", Licence (GNU General Public License v3.0), Source code link, and a "Film data" section with the TMDB logo and attribution line.
+9. **About**: app icon (placeholder for now) and name, version, "A notebook for working through filmographies. No accounts, no ads, no tracking. Your list stays on this phone.", Licence (GNU General Public License v3.0), Fonts (Newsreader and IBM Plex Sans, SIL OFL 1.1), Source code link, and a "Film data" section with the TMDB logo (`res/drawable/tmdb_logo.xml`, TMDB's official blue short logo, unaltered) and attribution line.
+   - Licence and Fonts open the full text. The texts are copied from `LICENSE` and `third_party/fonts/*/OFL.txt` into assets at build time (`copyLicenceTexts` in `app/build.gradle.kts`), so there's one copy of each.
 
 ## Filter rules (agreed)
 

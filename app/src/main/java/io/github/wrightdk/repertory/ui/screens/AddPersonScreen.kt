@@ -25,7 +25,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +58,7 @@ fun AddPersonScreen(
     personId: Int,
     onBack: () -> Unit,
     onAdded: (trackedPersonId: Long) -> Unit,
+    onOpenApiKeySetting: () -> Unit,
 ) {
     val context = LocalContext.current
     val viewModel: AddPersonViewModel = viewModel(
@@ -76,6 +76,7 @@ fun AddPersonScreen(
         onToggle = viewModel::toggle,
         onAdd = viewModel::add,
         onRetry = viewModel::retry,
+        onOpenApiKeySetting = onOpenApiKeySetting,
     )
 }
 
@@ -86,6 +87,7 @@ private fun AddPersonScreen(
     onToggle: (String) -> Unit,
     onAdd: () -> Unit,
     onRetry: () -> Unit,
+    onOpenApiKeySetting: () -> Unit,
 ) {
     val content = state.content
     Scaffold(
@@ -110,7 +112,7 @@ private fun AddPersonScreen(
         ) {
             when (content) {
                 AddPersonContent.Loading -> Loading()
-                is AddPersonContent.Error -> LoadError(content.error, onRetry)
+                is AddPersonContent.Error -> LoadError(content.error, onRetry, onOpenApiKeySetting)
                 is AddPersonContent.Loaded -> Loaded(content, onToggle)
             }
         }
@@ -340,20 +342,14 @@ private fun Loading() {
 }
 
 @Composable
-private fun LoadError(error: TmdbError, onRetry: () -> Unit) {
-    val (title, body) = when (error) {
-        TmdbError.NoNetwork -> R.string.search_error_offline_title to R.string.search_error_offline_body
-        TmdbError.InvalidApiKey -> R.string.search_error_key_title to R.string.search_error_key_body
-        TmdbError.RateLimited -> R.string.search_error_busy_title to R.string.search_error_busy_body
+private fun LoadError(error: TmdbError, onRetry: () -> Unit, onOpenApiKeySetting: () -> Unit) {
+    val (title, body) = commonTmdbErrorCopy(error) ?: when (error) {
         TmdbError.NotFound -> R.string.add_person_error_missing_title to R.string.add_person_error_missing_body
         else -> R.string.add_person_error_other_title to R.string.add_person_error_other_body
     }
     Message(title = stringResource(title), body = stringResource(body)) {
-        if (error != TmdbError.NotFound) {
-            OutlinedButton(onClick = onRetry, modifier = Modifier.padding(top = MaterialTheme.spacing.md)) {
-                Text(stringResource(R.string.try_again))
-            }
-        }
+        // Nothing to retry once TMDB has dropped the person.
+        TmdbErrorActions(error, onRetry.takeIf { error != TmdbError.NotFound }, onOpenApiKeySetting)
     }
 }
 

@@ -58,6 +58,11 @@ class FilmDetailsSync(
         scope.launch { listIdsMissingDetails.first().forEach(::enqueue) }
     }
 
+    /** Tries every list whose fetch stopped again, e.g. once the user has set their own TMDB key. */
+    fun retryFailed() {
+        states.value.filterValues { it is DetailsSyncState.Failed }.keys.forEach(::enqueue)
+    }
+
     private suspend fun run(trackedPersonId: Long) {
         val list = trackedList(trackedPersonId)
         val result = if (list == null) TmdbResult.Success(0) else fillMissingFilmDetails(list.personId, list.department)

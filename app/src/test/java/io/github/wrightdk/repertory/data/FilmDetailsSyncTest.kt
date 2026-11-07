@@ -69,6 +69,24 @@ class FilmDetailsSyncTest {
         assertEquals(null, sync.states.value[id])
     }
 
+    @Test fun `retryFailed tries again only the lists that stopped`() = runTest {
+        val failed = track(3895, "Acting")
+        val done = track(240, "Directing")
+        val sync = sync()
+        result = TmdbResult.Failure(TmdbError.InvalidApiKey)
+        sync.enqueue(failed)
+        runCurrent()
+        result = TmdbResult.Success(1)
+        sync.enqueue(done)
+        runCurrent()
+        calls.clear()
+
+        sync.retryFailed()
+        runCurrent()
+        assertEquals(listOf(3895 to "Acting"), calls)
+        assertEquals(emptyMap<Long, DetailsSyncState>(), sync.states.value)
+    }
+
     @Test fun `backfill starts every list still missing details`() = runTest {
         val caine = track(3895, "Acting")
         track(240, "Directing")

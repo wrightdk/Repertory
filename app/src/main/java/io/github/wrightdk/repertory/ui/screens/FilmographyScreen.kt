@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -36,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,26 +43,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -73,11 +64,14 @@ import io.github.wrightdk.repertory.appContainer
 import io.github.wrightdk.repertory.data.FilmCategory
 import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.remote.TmdbError
+import io.github.wrightdk.repertory.ui.components.DialogBody
+import io.github.wrightdk.repertory.ui.components.DialogButton
+import io.github.wrightdk.repertory.ui.components.DialogTextButton
 import io.github.wrightdk.repertory.ui.components.FilmPoster
 import io.github.wrightdk.repertory.ui.components.PersonPhoto
+import io.github.wrightdk.repertory.ui.components.RepertoryDialog
 import io.github.wrightdk.repertory.ui.components.dashedOutline
 import io.github.wrightdk.repertory.ui.components.skeletonPulse
-import io.github.wrightdk.repertory.ui.theme.Scrim
 import io.github.wrightdk.repertory.ui.theme.repertoryColors
 import io.github.wrightdk.repertory.ui.theme.serif
 import io.github.wrightdk.repertory.ui.theme.spacing
@@ -93,6 +87,7 @@ fun FilmographyScreen(
     onFilmSelected: (mediaType: MediaType, filmId: Int) -> Unit,
     /** After removing the list; [message] is for Home's snackbar ("Removed Michael Caine as Actor"). */
     onRemoved: (message: String) -> Unit,
+    onOpenApiKeySetting: () -> Unit,
 ) {
     val context = LocalContext.current
     val viewModel: FilmographyViewModel = viewModel(
@@ -139,6 +134,7 @@ fun FilmographyScreen(
             onToggleSeen = viewModel::toggleSeen,
             onOpen = { onFilmSelected(it.mediaType, it.tmdbId) },
             onRetry = viewModel::retry,
+            onOpenApiKeySetting = onOpenApiKeySetting,
             modifier = Modifier.consumeWindowInsets(innerPadding),
         )
     }
@@ -175,72 +171,24 @@ fun FilmographyScreen(
  */
 @Composable
 private fun RemoveListDialog(name: String, role: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-    ) {
-        // Draw the mockup's warm scrim (as the filter sheet does) in place of the platform's black dim.
-        // The window is edge to edge, so it also sets the status bar icons: keep them as the screen has them.
-        val view = LocalView.current
-        val window = (view.parent as? DialogWindowProvider)?.window
-        val lightBars = MaterialTheme.colorScheme.surface.luminance() > 0.5f
-        SideEffect {
-            window?.setDimAmount(0f)
-            window?.let { WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = lightBars }
-        }
-        val title = stringResource(R.string.remove_list_title, name, role)
-        Box(Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Scrim.copy(alpha = DialogScrimAlpha))
-                    .clickable(interactionSource = null, indication = null, onClick = onDismiss)
-                    .clearAndSetSemantics {},
+    RepertoryDialog(
+        title = stringResource(R.string.remove_list_title, name, role),
+        onDismiss = onDismiss,
+        buttons = {
+            DialogTextButton(stringResource(R.string.cancel), onClick = onDismiss)
+            DialogButton(
+                stringResource(R.string.remove_list_confirm),
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                ),
             )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = 28.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .padding(start = MaterialTheme.spacing.xl, end = MaterialTheme.spacing.xl, top = MaterialTheme.spacing.xl, bottom = MaterialTheme.spacing.lg)
-                    .semantics { paneTitle = title },
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.lg),
-            ) {
-                Text(title, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
-                Text(
-                    stringResource(R.string.remove_list_body),
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.5.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = MaterialTheme.spacing.sm),
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm, Alignment.End),
-                ) {
-                    val buttonText = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, lineHeight = 14.sp)
-                    TextButton(
-                        onClick = onDismiss,
-                        contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.lg),
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-                        modifier = Modifier.height(40.dp),
-                    ) { Text(stringResource(R.string.cancel), style = buttonText) }
-                    Button(
-                        onClick = onConfirm,
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
-                        modifier = Modifier.height(40.dp),
-                    ) { Text(stringResource(R.string.remove_list_confirm), style = buttonText) }
-                }
-            }
-        }
+        },
+    ) {
+        DialogBody(stringResource(R.string.remove_list_body))
     }
 }
-
-private const val DialogScrimAlpha = 0.4f
 
 @Composable
 private fun FilmographyList(
@@ -251,6 +199,7 @@ private fun FilmographyList(
     onToggleSeen: (FilmRow) -> Unit,
     onOpen: (FilmRow) -> Unit,
     onRetry: () -> Unit,
+    onOpenApiKeySetting: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -265,14 +214,14 @@ private fun FilmographyList(
             FilmographyBody.Loading -> item(key = "loading") { Loading() }
             is FilmographyBody.Error -> item(key = "error") {
                 HorizontalDivider(Modifier.padding(horizontal = MaterialTheme.spacing.gutter), color = MaterialTheme.colorScheme.onSurface)
-                LoadError(body.error, onRetry)
+                LoadError(body.error, onRetry, onOpenApiKeySetting)
             }
             FilmographyBody.Missing -> item(key = "missing") {
                 Message(stringResource(R.string.filmography_missing_title), stringResource(R.string.filmography_missing_body))
             }
             is FilmographyBody.Loaded -> {
                 val content = body.content
-                item(key = "progress") { Progress(content, body.details, onRetryDetails, onOpenFilters) }
+                item(key = "progress") { Progress(content, body.details, onRetryDetails, onOpenFilters, onOpenApiKeySetting) }
                 if (content.items.isEmpty()) {
                     item(key = "empty") {
                         Message(
@@ -371,6 +320,7 @@ private fun Progress(
     details: DetailsStatus,
     onRetryDetails: () -> Unit,
     onOpenFilters: () -> Unit,
+    onOpenApiKeySetting: () -> Unit,
 ) {
     Column(Modifier.padding(horizontal = MaterialTheme.spacing.gutter)) {
         HorizontalDivider(color = MaterialTheme.colorScheme.onSurface)
@@ -384,7 +334,7 @@ private fun Progress(
                 FilterSummaryLine(content.filterSummary, onOpenFilters)
             } else {
                 CountSkeleton(pulsing = details == DetailsStatus.Loading)
-                DetailsStatusLine(details, onRetryDetails)
+                DetailsStatusLine(details, onRetryDetails, onOpenApiKeySetting)
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -448,7 +398,7 @@ private fun CountSkeleton(pulsing: Boolean) {
 
 /** In the filter summary's place while details load: what's happening, or that it stopped and a retry. */
 @Composable
-private fun DetailsStatusLine(details: DetailsStatus, onRetry: () -> Unit) {
+private fun DetailsStatusLine(details: DetailsStatus, onRetry: () -> Unit, onOpenApiKeySetting: () -> Unit) {
     val ink2 = MaterialTheme.colorScheme.onSurfaceVariant
     when (details) {
         DetailsStatus.Complete -> Unit
@@ -464,24 +414,33 @@ private fun DetailsStatusLine(details: DetailsStatus, onRetry: () -> Unit) {
                 style = MetaStyle.copy(fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(stringResource(details.error.detailsFailedBody), style = MetaStyle, color = ink2)
-            TextButton(
-                onClick = onRetry,
-                contentPadding = PaddingValues(horizontal = 0.dp),
-            ) {
-                Text(stringResource(R.string.try_again), style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
+            Text(stringResource(detailsFailedBody(details.error, usingOwnTmdbKey())), style = MetaStyle, color = ink2)
+            Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xl)) {
+                val buttonText = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp)
+                TextButton(
+                    onClick = onRetry,
+                    contentPadding = PaddingValues(horizontal = 0.dp),
+                ) {
+                    Text(stringResource(R.string.try_again), style = buttonText)
+                }
+                if (details.error.pointsToApiKeySetting) {
+                    TextButton(
+                        onClick = onOpenApiKeySetting,
+                        contentPadding = PaddingValues(horizontal = 0.dp),
+                    ) {
+                        Text(apiKeyActionLabel(), style = buttonText)
+                    }
+                }
             }
         }
     }
 }
 
-private val TmdbError.detailsFailedBody: Int
-    get() = when (this) {
-        TmdbError.NoNetwork -> R.string.film_details_failed_offline
-        TmdbError.InvalidApiKey -> R.string.search_error_key_body
-        TmdbError.RateLimited -> R.string.search_error_busy_body
-        else -> R.string.filmography_error_other_body
-    }
+private fun detailsFailedBody(error: TmdbError, usingOwnKey: Boolean): Int = when {
+    error == TmdbError.NoNetwork -> R.string.film_details_failed_offline
+    error.pointsToApiKeySetting -> keyErrorBody(error, usingOwnKey)
+    else -> R.string.filmography_error_other_body
+}
 
 /** One small cell per film shown, in list order, wrapping as needed. */
 @Composable
@@ -725,20 +684,13 @@ private fun Loading() {
 }
 
 @Composable
-private fun LoadError(error: TmdbError, onRetry: () -> Unit) {
-    val (title, body) = when (error) {
-        TmdbError.NoNetwork -> R.string.search_error_offline_title to R.string.search_error_offline_body
-        TmdbError.InvalidApiKey -> R.string.search_error_key_title to R.string.search_error_key_body
-        TmdbError.RateLimited -> R.string.search_error_busy_title to R.string.search_error_busy_body
+private fun LoadError(error: TmdbError, onRetry: () -> Unit, onOpenApiKeySetting: () -> Unit) {
+    val (title, body) = commonTmdbErrorCopy(error) ?: when (error) {
         TmdbError.NotFound -> R.string.add_person_error_missing_title to R.string.add_person_error_missing_body
         else -> R.string.filmography_error_other_title to R.string.filmography_error_other_body
     }
     Message(title = stringResource(title), body = stringResource(body)) {
-        if (error != TmdbError.NotFound) {
-            OutlinedButton(onClick = onRetry, modifier = Modifier.padding(top = MaterialTheme.spacing.md)) {
-                Text(stringResource(R.string.try_again))
-            }
-        }
+        TmdbErrorActions(error, onRetry.takeIf { error != TmdbError.NotFound }, onOpenApiKeySetting)
     }
 }
 

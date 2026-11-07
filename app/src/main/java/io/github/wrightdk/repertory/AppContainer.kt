@@ -9,8 +9,12 @@ import io.github.wrightdk.repertory.data.TmdbRepository
 import io.github.wrightdk.repertory.data.parseSuggestions
 import io.github.wrightdk.repertory.data.local.RepertoryDatabase
 import io.github.wrightdk.repertory.data.remote.ApiKeyProvider
+import io.github.wrightdk.repertory.data.remote.RetryPolicy
 import io.github.wrightdk.repertory.data.remote.TmdbClient
+import io.github.wrightdk.repertory.data.remote.TmdbResult
 import io.github.wrightdk.repertory.data.remote.TmdbService
+import io.github.wrightdk.repertory.data.remote.map
+import io.github.wrightdk.repertory.data.remote.tmdbCall
 import java.io.File
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -31,9 +35,9 @@ class AppContainer(context: Context) {
         SettingsStore(appContext.getSharedPreferences(SettingsStore.PREFS_NAME, Context.MODE_PRIVATE))
     }
 
-    // The Settings "use my own TMDB API key" override plugs in here once it exists;
-    // the provider is read per request, so no client rebuild is needed.
-    private val apiKeyProvider = ApiKeyProvider { BuildConfig.TMDB_API_KEY }
+    // The user's own key from Settings wins over the built-in one. Read per
+    // request, so a change applies without rebuilding the client.
+    private val apiKeyProvider = ApiKeyProvider { settings.ownTmdbApiKey.value ?: BuildConfig.TMDB_API_KEY }
 
     private val tmdbService: TmdbService by lazy {
         TmdbClient.createService(
@@ -61,6 +65,21 @@ class AppContainer(context: Context) {
             fillMissingFilmDetails = tmdbRepository::fillMissingFilmDetails,
             log = { Log.i("Repertory", it) },
         )
+    }
+
+    /**
+     * Asks TMDB whether [key] works, before Settings saves it. Uses its own
+     * uncached client so the answer is about this key, not a cached response.
+     */
+    suspend fun checkTmdbApiKey(key: String): TmdbResult<Unit> = withContext(Dispatchers.IO) {
+        val service = TmdbClient.createService(keyProvider = { key })
+        tmdbCall(RetryPolicy.NONE) { service.configuration() }.map { }
+    }
+
+    /** Saves (or with null, clears) the user's own TMDB key and retries anything that stopped on the old one. */
+    fun setOwnTmdbApiKey(key: String?) {
+        settings.setOwnTmdbApiKey(key)
+        filmDetailsSync.retryFailed()
     }
 
     /** The people offered on the empty Home screen, from `assets/suggestions.json` (see `scripts/`). */

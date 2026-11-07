@@ -57,6 +57,10 @@
     <string name="search_error_key_body">TMDB isn’t accepting this app’s key. You can use your own TMDB API key in Settings.</string>
     <string name="search_error_busy_title">TMDB is busy.</string>
     <string name="search_error_busy_body">Too many requests for now. Wait a minute and try again, or use your own TMDB API key in Settings.</string>
+    <string name="tmdb_error_own_key_body">TMDB isn’t accepting your API key. Check it in Settings, or remove it to go back to the app’s own key.</string>
+    <string name="tmdb_error_busy_own_key_body">Too many requests on your key for now. Wait a minute and try again.</string>
+    <string name="tmdb_error_use_own_key">Use your own key</string>
+    <string name="tmdb_error_change_key">Change your key</string>
     <string name="search_error_other_title">Search didn’t work.</string>
     <string name="search_error_other_body">Something went wrong at TMDB. Try again in a moment.</string>
 
@@ -190,4 +194,32 @@
     <string name="theme_dark">Dark</string>
     <string name="theme_system">System</string>
     <string name="about">About</string>
+    <string name="settings_own_key">Use your own TMDB API key</string>
+    <string name="settings_own_key_off">Off. Using the app’s built-in key.</string>
+    <string name="settings_own_key_on">On. Key ending %1$s.</string>
+    <string name="own_key_dialog_title">Your own TMDB API key</string>
+    <string name="own_key_dialog_body">If film data stops loading, you can use a free API key of your own from TMDB: sign up at themoviedb.org, then find it under Settings, API. It stays on this phone.</string>
+    <string name="own_key_field_label">API key</string>
+    <string name="own_key_save">Save</string>
+    <string name="own_key_remove">Remove</string>
+    <string name="own_key_checking">Checking with TMDB…</string>
+    <string name="own_key_error_format">That doesn’t look like a TMDB API key. It’s 32 letters and numbers.</string>
+    <string name="own_key_error_token">That’s an API read access token. Paste the shorter API key instead.</string>
+    <string name="own_key_error_rejected">TMDB didn’t accept this key.</string>
+    <string name="own_key_error_offline">Can’t reach TMDB to check the key. Check your connection and try again.</string>
+    <string name="own_key_error_other">Couldn’t check the key with TMDB. Try again in a moment.</string>
+
+    <!-- About -->
+    <string name="about_version">Version %1$s</string>
+    <string name="about_description">A notebook for working through filmographies. No accounts, no ads, no tracking. Your list stays on this phone.</string>
+    <string name="about_licence">Licence</string>
+    <string name="about_licence_name">GNU General Public License v3.0</string>
+    <string name="about_fonts">Fonts</string>
+    <string name="about_fonts_licence">Newsreader and IBM Plex Sans, SIL OFL 1.1</string>
+    <string name="about_source_code">Source code</string>
+    <string name="about_film_data">Film data</string>
+    <string name="about_tmdb_logo">TMDB</string>
+    <string name="about_tmdb_attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</string>
+    <string name="licence_title_app">Licence</string>
+    <string name="licence_title_fonts">Font licences</string>
 </resources>

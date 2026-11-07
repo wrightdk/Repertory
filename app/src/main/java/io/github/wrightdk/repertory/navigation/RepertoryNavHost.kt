@@ -13,6 +13,8 @@ import io.github.wrightdk.repertory.ui.screens.AddPersonScreen
 import io.github.wrightdk.repertory.ui.screens.FilmDetailScreen
 import io.github.wrightdk.repertory.ui.screens.FilmographyScreen
 import io.github.wrightdk.repertory.ui.screens.HomeScreen
+import io.github.wrightdk.repertory.ui.screens.LicenceKind
+import io.github.wrightdk.repertory.ui.screens.LicenceScreen
 import io.github.wrightdk.repertory.ui.screens.SearchScreen
 import io.github.wrightdk.repertory.ui.screens.SettingsScreen
 
@@ -23,6 +25,8 @@ private const val HOME_MESSAGE = "home_message"
 fun RepertoryNavHost() {
     val navController = rememberNavController()
     val back: () -> Unit = { navController.popBackStack() }
+    // From a 401/429 error: Settings with the own-key dialog open. Back returns to the error to try again.
+    val openApiKeySetting: () -> Unit = { navController.navigate(SettingsRoute(editApiKey = true)) }
 
     NavHost(navController = navController, startDestination = HomeRoute) {
         composable<HomeRoute> { entry ->
@@ -33,13 +37,14 @@ fun RepertoryNavHost() {
                 onAddPerson = { navController.navigate(SearchRoute) },
                 onOpenList = { id -> navController.navigate(FilmographyRoute(id)) },
                 onSuggestion = { personId -> navController.navigate(AddPersonRoute(personId)) },
-                onSettings = { navController.navigate(SettingsRoute) },
+                onSettings = { navController.navigate(SettingsRoute()) },
             )
         }
         composable<SearchRoute> {
             SearchScreen(
                 onBack = back,
                 onPersonSelected = { personId -> navController.navigate(AddPersonRoute(personId)) },
+                onOpenApiKeySetting = openApiKeySetting,
             )
         }
         composable<AddPersonRoute> { entry ->
@@ -54,6 +59,7 @@ fun RepertoryNavHost() {
                         popUpTo(HomeRoute)
                     }
                 },
+                onOpenApiKeySetting = openApiKeySetting,
             )
         }
         composable<FilmographyRoute> { entry ->
@@ -69,6 +75,7 @@ fun RepertoryNavHost() {
                     navController.getBackStackEntry<HomeRoute>().savedStateHandle[HOME_MESSAGE] = message
                     navController.popBackStack<HomeRoute>(inclusive = false)
                 },
+                onOpenApiKeySetting = openApiKeySetting,
             )
         }
         composable<FilmDetailRoute> { entry ->
@@ -80,11 +87,18 @@ fun RepertoryNavHost() {
                 onBack = back,
             )
         }
-        composable<SettingsRoute> {
-            SettingsScreen(onBack = back, onAbout = { navController.navigate(AboutRoute) })
+        composable<SettingsRoute> { entry ->
+            SettingsScreen(
+                onBack = back,
+                onAbout = { navController.navigate(AboutRoute) },
+                openApiKeyDialog = entry.toRoute<SettingsRoute>().editApiKey,
+            )
         }
         composable<AboutRoute> {
-            AboutScreen(onBack = back)
+            AboutScreen(onBack = back, onOpenLicence = { kind -> navController.navigate(LicenceRoute(kind.name)) })
+        }
+        composable<LicenceRoute> { entry ->
+            LicenceScreen(kind = LicenceKind.valueOf(entry.toRoute<LicenceRoute>().kind), onBack = back)
         }
     }
 }
