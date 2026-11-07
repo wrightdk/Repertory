@@ -19,6 +19,30 @@ val tmdbApiKey: String = localProperties.getProperty("TMDB_API_KEY")?.trim()?.ta
     ?: providers.gradleProperty("TMDB_API_KEY").orNull?.trim()?.takeIf { it.isNotEmpty() }
     ?: ""
 
+// Release signing with the Play upload key. Each value comes from an environment
+// variable or a Gradle property, set in ~/.gradle/gradle.properties (outside the
+// repo) or with -P. Never put them in this repo's gradle.properties: the build
+// refuses to run if it finds them there.
+//
+// Without REPERTORY_UPLOAD_STORE_FILE the release build is left unsigned. That's
+// what F-Droid needs (it builds from source and signs with its own key).
+val signingPropertyNames = listOf(
+    "REPERTORY_UPLOAD_STORE_FILE",
+    "REPERTORY_UPLOAD_STORE_PASSWORD",
+    "REPERTORY_UPLOAD_KEY_ALIAS",
+    "REPERTORY_UPLOAD_KEY_PASSWORD",
+)
+val repoGradleProperties = providers.fileContents(rootProject.layout.projectDirectory.file("gradle.properties")).asText.get()
+signingPropertyNames.firstOrNull { name -> Regex("^\\s*$name\\s*[=:]", RegexOption.MULTILINE).containsMatchIn(repoGradleProperties) }?.let {
+    throw GradleException("$it is in the project's gradle.properties, which is committed. Move it to ~/.gradle/gradle.properties.")
+}
+fun signingValue(name: String): String? =
+    providers.environmentVariable(name).orNull?.takeIf { it.isNotBlank() }
+        ?: providers.gradleProperty(name).orNull?.takeIf { it.isNotBlank() }
+val uploadStoreFile = signingValue("REPERTORY_UPLOAD_STORE_FILE")?.let { path ->
+    file(if (path.startsWith("~/")) System.getProperty("user.home") + path.drop(1) else path)
+}
+
 android {
     namespace = "io.github.wrightdk.repertory"
     compileSdk {
@@ -29,20 +53,41 @@ android {
         applicationId = "io.github.wrightdk.repertory"
         minSdk = 26
         targetSdk = 37
+        // Bump versionCode by one for every build uploaded to Play or tagged for F-Droid.
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "TMDB_API_KEY", "\"$tmdbApiKey\"")
     }
 
+    signingConfigs {
+        if (uploadStoreFile != null) {
+            create("upload") {
+                val missing = signingPropertyNames.drop(1).filter { signingValue(it) == null }
+                if (missing.isNotEmpty()) {
+                    throw GradleException("REPERTORY_UPLOAD_STORE_FILE is set but ${missing.joinToString()} isn't.")
+                }
+                if (!uploadStoreFile.isFile) {
+                    throw GradleException("Upload keystore not found at $uploadStoreFile (REPERTORY_UPLOAD_STORE_FILE).")
+                }
+                storeFile = uploadStoreFile
+                storePassword = signingValue("REPERTORY_UPLOAD_STORE_PASSWORD")
+                keyAlias = signingValue("REPERTORY_UPLOAD_KEY_ALIAS")
+                keyPassword = signingValue("REPERTORY_UPLOAD_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // R8 over all code (app and libraries): shrinking, optimisation, obfuscation,
+            // plus resource shrinking. Keep rules are in src/main/keepRules/.
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
+            signingConfig = signingConfigs.findByName("upload")
         }
     }
     compileOptions {

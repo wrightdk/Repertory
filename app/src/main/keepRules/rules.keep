@@ -1,12 +1,24 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
+# R8 keep rules for the app. AGP combines every file in src/main/keepRules with
+# its default optimising rules and the rules each library ships in its AAR/JAR.
+#
+# The libraries that rely on reflection already ship their own rules, so nothing
+# here keeps them by hand:
+#   - Retrofit (META-INF/proguard/retrofit2.pro): service interfaces, the
+#     generic return types of suspend functions, Continuation.
+#   - kotlinx.serialization (META-INF/com.android.tools/r8/kotlinx-serialization-common.pro):
+#     the generated serializers and Companion.serializer() that Retrofit's
+#     converter looks up by type at runtime (TMDB DTOs, backup JSON,
+#     navigation routes, watch provider cache).
+#   - Room: the generated RepertoryDatabase_Impl, created by class name.
+#   - OkHttp, Coil, Navigation, Compose: their own consumer rules.
+# If a release build breaks, check those first, then add a narrow rule here
+# with a comment saying why.
 #
 # For more details, see
 #   https://d.android.com/r/tools/r8/keep-rules
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Readable stack traces from a release build: keep line numbers and hide the
+# original file names. Retrace with the mapping.txt saved for that release
+# (app/build/outputs/mapping/release/).
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

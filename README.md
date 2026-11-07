@@ -23,6 +23,25 @@ A free, open-source Android app for working through filmographies. Pick director
    ./gradlew installDebug
    ```
 
+### Release builds
+
+```bash
+./gradlew bundleRelease assembleRelease
+```
+
+R8 shrinks, optimises and obfuscates the release build; keep rules are in `app/src/main/keepRules/`. Keep `app/build/outputs/mapping/release/mapping.txt` from each release to read its stack traces.
+
+The release build is signed only if these are set, as environment variables or in `~/.gradle/gradle.properties` (never in the repo's `gradle.properties`; the build refuses them there):
+
+```properties
+REPERTORY_UPLOAD_STORE_FILE=/path/to/upload-keystore.jks
+REPERTORY_UPLOAD_STORE_PASSWORD=…
+REPERTORY_UPLOAD_KEY_ALIAS=upload
+REPERTORY_UPLOAD_KEY_PASSWORD=…
+```
+
+Without them it's unsigned, which is what F-Droid builds and signs itself.
+
 ## Testing
 
 Unit tests run offline against saved TMDB responses in `app/src/test/resources/tmdb/`:
