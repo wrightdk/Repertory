@@ -49,6 +49,8 @@ class TmdbServiceTest {
         val person = service.person(6817)
         assertEquals("Agnès Varda", person.name)
         assertEquals("1928-05-30", person.birthday)
+        assertEquals("2019-03-29", person.deathday)
+        assertEquals("Directing", person.knownForDepartment)
         assertTrue(person.profilePath!!.startsWith("/"))
     }
 
@@ -62,10 +64,16 @@ class TmdbServiceTest {
         assertEquals("movie", cleoDirector.mediaType)
         assertEquals("Directing", cleoDirector.department)
         assertEquals("1962-04-11", cleoDirector.releaseDate)
-        // TV entries use name/first_air_date, so title and release_date are absent.
+        assertEquals(listOf(18), cleoDirector.genreIds)
+        val charlie = credits.cast.first { it.id == 13440 }
+        assertEquals("The Widow Hyppolite", charlie.character)
+        assertEquals(11, charlie.order)
+        // TV entries use name/first_air_date instead of title/release_date.
         val tv = credits.cast.first { it.mediaType == "tv" }
         assertNull(tv.title)
         assertNull(tv.releaseDate)
+        assertEquals("Varda by Agnès", tv.name)
+        assertEquals("2019-03-18", tv.firstAirDate)
     }
 
     @Test fun `parses movie details`() = runTest {
@@ -73,6 +81,8 @@ class TmdbServiceTest {
         val movie = service.movie(277677)
         assertEquals("Uncle Yanco", movie.title)
         assertEquals(18, movie.runtime)
+        assertEquals("Released", movie.status)
+        assertEquals("1967-10-01", movie.releaseDate)
         assertEquals(listOf(99), movie.genres.map { it.id })
     }
 

@@ -3,7 +3,11 @@ package io.github.wrightdk.repertory.data
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import io.github.wrightdk.repertory.data.local.RepertoryDatabase
+import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.ImageConfig
+import io.github.wrightdk.repertory.data.local.entity.MediaType
+import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
+import io.github.wrightdk.repertory.data.local.entity.Viewing
 import io.github.wrightdk.repertory.data.remote.FakeTmdbServer
 import io.github.wrightdk.repertory.data.remote.FakeTmdbServer.Companion.json
 import io.github.wrightdk.repertory.data.remote.RetryPolicy
@@ -13,6 +17,7 @@ import io.github.wrightdk.repertory.data.remote.TmdbResult
 import io.github.wrightdk.repertory.data.remote.errorOrNull
 import io.github.wrightdk.repertory.data.remote.fixture
 import io.github.wrightdk.repertory.data.remote.getOrNull
+import java.time.LocalDate
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -85,19 +90,31 @@ class TmdbRepositoryTest {
 
         val person = repo.observePerson(VARDA).first()!!
         assertEquals("Agnès Varda", person.name)
+        assertEquals(LocalDate.of(1928, 5, 30), person.birthday)
+        assertEquals(LocalDate.of(2019, 3, 29), person.deathday)
+        assertEquals("Directing", person.knownForDepartment)
         assertEquals(now, person.cachedAt)
 
         val directing = repo.observeFilmography(VARDA, "Directing").first()
         assertEquals(
-            "chronological",
-            listOf("Cléo from 5 to 7", "Uncle Yanco", "Nausicaa", "Vagabond", "Faces Places"),
+            "chronological, TV series included",
+            listOf("Cléo from 5 to 7", "Uncle Yanco", "Nausicaa", "Vagabond", "Faces Places", "Varda by Agnès"),
             directing.map { it.film.title },
         )
         assertEquals(setOf("Director"), directing.map { it.credit.job }.toSet())
+        assertEquals(MediaType.TV, directing.last().film.mediaType)
+        assertEquals(listOf(10770, 18), directing.single { it.film.tmdbId == 324072 }.film.genreIds)
 
         val acting = repo.observeFilmography(VARDA, "Acting").first()
-        assertEquals(3, acting.size)
-        assertEquals("The Widow Hyppolite", acting.single { it.film.tmdbId == 13440 }.credit.character)
+        assertEquals(4, acting.size)
+        val charlie = acting.single { it.film.tmdbId == 13440 }.credit
+        assertEquals("The Widow Hyppolite", charlie.character)
+        assertEquals(11, charlie.order)
+        assertEquals(
+            "appearances as self",
+            setOf(929052, 87772),
+            acting.filter { it.credit.isSelf }.map { it.film.tmdbId }.toSet(),
+        )
     }
 
     @Test fun `departments are counted by distinct film`() = runTest {
@@ -107,7 +124,7 @@ class TmdbRepositoryTest {
         val departments = repo.departments(VARDA).associate { it.department to it.filmCount }
 
         assertEquals(
-            mapOf("Directing" to 5, "Acting" to 3, "Writing" to 2, "Editing" to 1, "Sound" to 1),
+            mapOf("Directing" to 6, "Acting" to 4, "Writing" to 2, "Editing" to 1, "Sound" to 1),
             departments,
         )
     }
@@ -140,7 +157,7 @@ class TmdbRepositoryTest {
         repo.refreshPerson(VARDA)
         repo.refreshPerson(VARDA, force = true)
 
-        assertEquals(5, repo.observeFilmography(VARDA, "Directing").first().size)
+        assertEquals(6, repo.observeFilmography(VARDA, "Directing").first().size)
     }
 
     @Test fun `failed refresh keeps the cache and reports the error`() = runTest {
@@ -152,7 +169,7 @@ class TmdbRepositoryTest {
 
         assertEquals(TmdbError.RateLimited, result.errorOrNull())
         assertEquals("Agnès Varda", repo.observePerson(VARDA).first()?.name)
-        assertEquals(5, repo.observeFilmography(VARDA, "Directing").first().size)
+        assertEquals(6, repo.observeFilmography(VARDA, "Directing").first().size)
     }
 
     @Test fun `offline with nothing cached reports NoNetwork and stores nothing`() = runTest {
@@ -177,18 +194,20 @@ class TmdbRepositoryTest {
 
     // ---- Films ----
 
-    @Test fun `fillMissingFilmDetails fetches runtimes, marks shorts and skips missing films`() = runTest {
+    @Test fun `fillMissingFilmDetails fetches runtimes and status, marks shorts and skips missing films`() = runTest {
         routeVarda()
         tmdb.routeFixture("/movie/499", "movie_feature.json")
         tmdb.routeFixture("/movie/277677", "movie_short.json")
         repo.refreshPerson(VARDA)
 
-        // 8 films; only 2 have fixtures, the other 6 get 404 and are skipped.
+        // 8 movies; only 2 have fixtures, the other 6 get 404 and are skipped.
         assertEquals(TmdbResult.Success(2), repo.fillMissingFilmDetails(VARDA))
+        assertEquals("the TV series is never sent to /movie", 0, tmdb.requestCount("/movie/87772"))
 
         val byId = repo.observeFilmography(VARDA, "Directing").first().associate { it.film.tmdbId to it.film }
         assertTrue(byId.getValue(277677).isShort)
         assertEquals(18, byId.getValue(277677).runtime)
+        assertEquals("Released", byId.getValue(277677).status)
         assertFalse(byId.getValue(499).isShort)
         assertEquals(90, byId.getValue(499).runtime)
         assertNull(byId.getValue(44018).runtime)
@@ -210,12 +229,13 @@ class TmdbRepositoryTest {
         routeVarda()
         tmdb.routeFixture("/movie/277677", "movie_short.json")
         repo.refreshPerson(VARDA)
-        repo.refreshFilm(277677)
+        repo.refreshMovie(277677)
 
         repo.refreshPerson(VARDA, force = true)
 
-        val yanco = repo.observeFilm(277677).first()!!
+        val yanco = repo.observeFilm(MediaType.MOVIE, 277677).first()!!
         assertEquals(18, yanco.runtime)
+        assertEquals("Released", yanco.status)
         assertTrue(yanco.isShort)
         assertNotNull(yanco.detailsCachedAt)
     }
@@ -223,13 +243,58 @@ class TmdbRepositoryTest {
     @Test fun `film details are cached`() = runTest {
         tmdb.routeFixture("/movie/499", "movie_feature.json")
 
-        repo.refreshFilm(499)
-        repo.refreshFilm(499)
+        repo.refreshMovie(499)
+        repo.refreshMovie(499)
         assertEquals(1, tmdb.requestCount("/movie/499"))
 
         now += 31.days.inWholeMilliseconds
-        repo.refreshFilm(499)
+        repo.refreshMovie(499)
         assertEquals(2, tmdb.requestCount("/movie/499"))
+    }
+
+    // ---- User data ----
+
+    @Test fun `viewing is per film, with an optional date`() = runTest {
+        val viewings = db.viewingDao()
+        viewings.upsert(Viewing(MediaType.MOVIE, 499, seenOn = LocalDate.of(2023, 7, 19)))
+        assertEquals(LocalDate.of(2023, 7, 19), viewings.observe(MediaType.MOVIE, 499).first()?.seenOn)
+
+        viewings.upsert(Viewing(MediaType.MOVIE, 499, seenOn = null))
+        val cleared = viewings.observe(MediaType.MOVIE, 499).first()!!
+        assertNull("date cleared but still seen", cleared.seenOn)
+        assertNull("same id as a movie, different title", viewings.observe(MediaType.TV, 499).first())
+
+        viewings.delete(MediaType.MOVIE, 499)
+        assertNull(viewings.observe(MediaType.MOVIE, 499).first())
+    }
+
+    @Test fun `viewings survive refreshing the cache and removing the list`() = runTest {
+        routeVarda()
+        repo.refreshPerson(VARDA)
+        val lists = db.trackedPersonDao()
+        lists.insert(TrackedPerson(personId = VARDA, department = "Directing", addedAt = now))
+        db.viewingDao().upsert(Viewing(MediaType.MOVIE, 499, seenOn = null))
+
+        repo.refreshPerson(VARDA, force = true)
+        lists.delete(lists.observeAll().first().single())
+        // Evict the whole TMDB cache (credits cascade).
+        db.openHelper.writableDatabase.execSQL("DELETE FROM person")
+        db.openHelper.writableDatabase.execSQL("DELETE FROM film")
+
+        assertNull(repo.observeFilm(MediaType.MOVIE, 499).first())
+        assertEquals(listOf(Viewing(MediaType.MOVIE, 499, null)), db.viewingDao().observeAll().first())
+    }
+
+    @Test fun `list filter override is stored, and null means follow the defaults`() = runTest {
+        val lists = db.trackedPersonDao()
+        lists.insert(TrackedPerson(personId = VARDA, department = "Directing", addedAt = now))
+        val custom = FilmographyFilters.DEFAULTS.copy(showShorts = true, showSelf = true)
+        lists.insert(TrackedPerson(personId = VARDA, department = "Acting", addedAt = now, filterOverride = custom))
+
+        val byDept = lists.observeAll().first().associateBy { it.department }
+
+        assertNull(byDept.getValue("Directing").filterOverride)
+        assertEquals(custom, byDept.getValue("Acting").filterOverride)
     }
 
     // ---- Images ----

@@ -1,7 +1,6 @@
 package io.github.wrightdk.repertory.data.local
 
 import android.content.Context
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -28,12 +27,10 @@ import io.github.wrightdk.repertory.data.local.entity.Viewing
         Viewing::class,
         ImageConfig::class,
     ],
-    version = 2,
+    // Unreleased: schema changes bump the version and the app is reinstalled.
+    // No migrations until the first public release; from then on every bump needs one.
+    version = 3,
     exportSchema = true,
-    autoMigrations = [
-        // Film.isTvMovie, Film.detailsCachedAt, image_config table.
-        AutoMigration(from = 1, to = 2),
-    ],
 )
 @TypeConverters(Converters::class)
 abstract class RepertoryDatabase : RoomDatabase() {

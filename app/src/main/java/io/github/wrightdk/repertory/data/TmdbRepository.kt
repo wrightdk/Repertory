@@ -6,6 +6,7 @@ import io.github.wrightdk.repertory.data.local.dao.DepartmentCount
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.Film
 import io.github.wrightdk.repertory.data.local.entity.ImageConfig
+import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.Person
 import io.github.wrightdk.repertory.data.remote.RetryPolicy
 import io.github.wrightdk.repertory.data.remote.TmdbError
@@ -107,7 +108,7 @@ class TmdbRepository(
     /**
      * Fetches the person and all their film credits and replaces the cached
      * copies, unless they were cached within [CachePolicy.person] and [force] is false.
-     * Films already cached keep their runtime details.
+     * Films already cached keep their `/movie/{id}` details (runtime, status).
      */
     suspend fun refreshPerson(personId: Int, force: Boolean = false): TmdbResult<Unit> {
         val cached = personDao.get(personId)
@@ -127,11 +128,10 @@ class TmdbRepository(
         val mapped = credits.toEntities(personId, now)
         database.withTransaction {
             personDao.upsert(person.toEntity(now))
-            val existing = mapped.films.map { it.tmdbId }
-                .chunked(SQL_IN_CHUNK)
-                .flatMap { filmDao.getByIds(it) }
-                .associateBy { it.tmdbId }
-            filmDao.upsertAll(mapped.films.map { it.mergedWith(existing[it.tmdbId]) })
+            val existing = mapped.films.groupBy({ it.mediaType }, { it.tmdbId })
+                .flatMap { (type, ids) -> ids.chunked(SQL_IN_CHUNK).flatMap { filmDao.getByIds(type, it) } }
+                .associateBy { it.mediaType to it.tmdbId }
+            filmDao.upsertAll(mapped.films.map { it.mergedWith(existing[it.mediaType to it.tmdbId]) })
             creditDao.replaceForPerson(personId, mapped.credits)
         }
         return TmdbResult.Success(Unit)
@@ -139,30 +139,33 @@ class TmdbRepository(
 
     // ---- Films ----
 
-    fun observeFilm(filmId: Int): Flow<Film?> = filmDao.observe(filmId)
+    fun observeFilm(mediaType: MediaType, filmId: Int): Flow<Film?> = filmDao.observe(mediaType, filmId)
 
-    /** Fetches `/movie/{id}` unless details were cached within [CachePolicy.filmDetails]. */
-    suspend fun refreshFilm(filmId: Int, force: Boolean = false): TmdbResult<Unit> {
-        val cachedAt = filmDao.get(filmId)?.detailsCachedAt
+    /**
+     * Fetches `/movie/{id}` for [movieId] unless details were cached within
+     * [CachePolicy.filmDetails]. TV series have no details to fetch.
+     */
+    suspend fun refreshMovie(movieId: Int, force: Boolean = false): TmdbResult<Unit> {
+        val cachedAt = filmDao.get(MediaType.MOVIE, movieId)?.detailsCachedAt
         if (!force && cachedAt != null && isFresh(cachedAt, cachePolicy.filmDetails)) {
             return TmdbResult.Success(Unit)
         }
-        return fetchFilmDetails(filmId).map { }
+        return fetchMovieDetails(movieId).map { }
     }
 
     /**
-     * Fetches `/movie/{id}` for every film of [personId] that has never had its
-     * details loaded (credits alone don't include runtime, so shorts can't be
-     * spotted without this). Runs a few requests at a time and stops early on
+     * Fetches `/movie/{id}` for every movie of [personId] that has never had its
+     * details loaded (credits alone don't include runtime or status, so shorts
+     * and unreleased films can't be told apart without this). Runs a few requests at a time and stops early on
      * errors that would fail every remaining request too; a missing film is skipped.
      *
      * @return the number of films whose details were fetched.
      */
     suspend fun fillMissingFilmDetails(personId: Int): TmdbResult<Int> {
         var fetched = 0
-        for (batch in filmDao.idsMissingDetails(personId).chunked(DETAILS_CONCURRENCY)) {
+        for (batch in filmDao.movieIdsMissingDetails(personId).chunked(DETAILS_CONCURRENCY)) {
             val results = coroutineScope {
-                batch.map { id -> async { fetchFilmDetails(id) } }.awaitAll()
+                batch.map { id -> async { fetchMovieDetails(id) } }.awaitAll()
             }
             fetched += results.count { it is TmdbResult.Success }
             val fatal = results.firstNotNullOfOrNull { r -> r.errorOrNull()?.takeIf { it != TmdbError.NotFound } }
@@ -171,8 +174,8 @@ class TmdbRepository(
         return TmdbResult.Success(fetched)
     }
 
-    private suspend fun fetchFilmDetails(filmId: Int): TmdbResult<Film> =
-        call { service.movie(filmId) }.map { dto ->
+    private suspend fun fetchMovieDetails(movieId: Int): TmdbResult<Film> =
+        call { service.movie(movieId) }.map { dto ->
             dto.toEntity(clock()).also { filmDao.upsert(it) }
         }
 

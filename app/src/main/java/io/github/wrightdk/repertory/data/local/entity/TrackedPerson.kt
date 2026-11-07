@@ -6,7 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * A person the user is tracking under one role. The same person can be tracked
+ * A list: one person tracked in one role. The same person can be tracked
  * under several departments, so (personId, department) is unique rather than personId.
  *
  * User data. No foreign key to [Person] on purpose: refreshing or evicting the
@@ -23,15 +23,30 @@ data class TrackedPerson(
     val department: String,
     /** Epoch millis. */
     val addedAt: Long,
-    /** Epoch millis of the last change relevant to "recently updated" sorting. */
+    /** Epoch millis of the last change relevant to "Recent" sorting. */
     val updatedAt: Long = addedAt,
-    @Embedded val filters: FilmographyFilters = FilmographyFilters(),
-)
+    /** This list's own filters, or null to follow the global defaults from Settings. */
+    @Embedded(prefix = "filter_") val filterOverride: FilmographyFilters? = null,
+) {
+    fun filters(defaults: FilmographyFilters): FilmographyFilters = filterOverride ?: defaults
+}
 
-/** Per-tracked-person filter preferences. Defaults hide the noisy entries. */
+/** Which kinds of film a list shows. Each flag means "show". */
 data class FilmographyFilters(
-    val showShorts: Boolean = false,
-    val showTv: Boolean = false,
-    val showDocumentaries: Boolean = false,
-    val showMinorRoles: Boolean = false,
-)
+    val showShorts: Boolean,
+    val showTv: Boolean,
+    val showDocumentaries: Boolean,
+    val showSelf: Boolean,
+    val showMinorRoles: Boolean,
+) {
+    companion object {
+        /** Out of the box: everything hidden except documentaries. */
+        val DEFAULTS = FilmographyFilters(
+            showShorts = false,
+            showTv = false,
+            showDocumentaries = true,
+            showSelf = false,
+            showMinorRoles = false,
+        )
+    }
+}

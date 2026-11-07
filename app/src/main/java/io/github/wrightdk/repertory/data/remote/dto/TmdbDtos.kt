@@ -59,9 +59,14 @@ data class CombinedCreditsDto(
 @Serializable
 data class CastCreditDto(
     val id: Int,
+    /** "movie" or "tv". Movie and TV ids are separate namespaces. */
     @SerialName("media_type") val mediaType: String? = null,
+    /** Movies. */
     val title: String? = null,
     @SerialName("release_date") val releaseDate: String? = null,
+    /** TV. */
+    val name: String? = null,
+    @SerialName("first_air_date") val firstAirDate: String? = null,
     @SerialName("poster_path") val posterPath: String? = null,
     @SerialName("genre_ids") val genreIds: List<Int> = emptyList(),
     val adult: Boolean = false,
@@ -72,9 +77,14 @@ data class CastCreditDto(
 @Serializable
 data class CrewCreditDto(
     val id: Int,
+    /** "movie" or "tv". Movie and TV ids are separate namespaces. */
     @SerialName("media_type") val mediaType: String? = null,
+    /** Movies. */
     val title: String? = null,
     @SerialName("release_date") val releaseDate: String? = null,
+    /** TV. */
+    val name: String? = null,
+    @SerialName("first_air_date") val firstAirDate: String? = null,
     @SerialName("poster_path") val posterPath: String? = null,
     @SerialName("genre_ids") val genreIds: List<Int> = emptyList(),
     val adult: Boolean = false,
@@ -91,6 +101,7 @@ data class MovieDetailsDto(
     @SerialName("poster_path") val posterPath: String? = null,
     val runtime: Int? = null,
     val genres: List<GenreDto> = emptyList(),
+    /** "Released", "Post Production", "In Production", "Planned", "Rumored", "Canceled". */
     val status: String? = null,
 )
 

@@ -5,6 +5,7 @@ import androidx.room.Embedded
 import androidx.room.Query
 import androidx.room.Upsert
 import io.github.wrightdk.repertory.data.local.entity.Film
+import io.github.wrightdk.repertory.data.local.entity.MediaType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -15,25 +16,25 @@ interface FilmDao {
     @Upsert
     suspend fun upsert(film: Film)
 
-    @Query("SELECT * FROM film WHERE tmdbId = :tmdbId")
-    suspend fun get(tmdbId: Int): Film?
+    @Query("SELECT * FROM film WHERE mediaType = :mediaType AND tmdbId = :tmdbId")
+    suspend fun get(mediaType: MediaType, tmdbId: Int): Film?
 
     /** Callers keep [tmdbIds] under SQLite's bind-variable limit (chunk by 500). */
-    @Query("SELECT * FROM film WHERE tmdbId IN (:tmdbIds)")
-    suspend fun getByIds(tmdbIds: List<Int>): List<Film>
+    @Query("SELECT * FROM film WHERE mediaType = :mediaType AND tmdbId IN (:tmdbIds)")
+    suspend fun getByIds(mediaType: MediaType, tmdbIds: List<Int>): List<Film>
 
-    @Query("SELECT * FROM film WHERE tmdbId = :tmdbId")
-    fun observe(tmdbId: Int): Flow<Film?>
+    @Query("SELECT * FROM film WHERE mediaType = :mediaType AND tmdbId = :tmdbId")
+    fun observe(mediaType: MediaType, tmdbId: Int): Flow<Film?>
 
-    /** Films credited to [personId] whose `/movie/{id}` details have never been fetched. */
+    /** Movies credited to [personId] whose `/movie/{id}` details have never been fetched. */
     @Query(
         """
         SELECT DISTINCT film.tmdbId FROM film
-        JOIN credit ON credit.filmId = film.tmdbId
-        WHERE credit.personId = :personId AND film.detailsCachedAt IS NULL
+        JOIN credit ON credit.mediaType = film.mediaType AND credit.filmId = film.tmdbId
+        WHERE credit.personId = :personId AND film.mediaType = 'MOVIE' AND film.detailsCachedAt IS NULL
         """
     )
-    suspend fun idsMissingDetails(personId: Int): List<Int>
+    suspend fun movieIdsMissingDetails(personId: Int): List<Int>
 
     /**
      * Every film [personId] is credited on in [department], one row per credit
@@ -43,8 +44,8 @@ interface FilmDao {
     @Query(
         """
         SELECT film.*, credit.job AS credit_job, credit.character AS credit_character,
-            credit.`order` AS credit_order
-        FROM credit JOIN film ON film.tmdbId = credit.filmId
+            credit.`order` AS credit_order, credit.isSelf AS credit_isSelf
+        FROM credit JOIN film ON film.mediaType = credit.mediaType AND film.tmdbId = credit.filmId
         WHERE credit.personId = :personId AND credit.department = :department
         ORDER BY film.releaseDate IS NULL, film.releaseDate, film.title
         """
@@ -62,4 +63,5 @@ data class CreditInfo(
     val job: String?,
     val character: String?,
     val order: Int?,
+    val isSelf: Boolean,
 )
