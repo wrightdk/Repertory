@@ -9,6 +9,6 @@ data class Person(
     @PrimaryKey val tmdbId: Int,
     val name: String,
     val profilePath: String?,
-    /** Epoch millis when this row was last fetched from TMDB. */
+    /** Epoch millis when this person and their credits were last fetched from TMDB (always together). */
     val cachedAt: Long,
 )

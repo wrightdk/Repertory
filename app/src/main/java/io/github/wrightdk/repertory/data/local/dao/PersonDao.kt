@@ -12,5 +12,8 @@ interface PersonDao {
     suspend fun upsert(person: Person)
 
     @Query("SELECT * FROM person WHERE tmdbId = :tmdbId")
+    suspend fun get(tmdbId: Int): Person?
+
+    @Query("SELECT * FROM person WHERE tmdbId = :tmdbId")
     fun observe(tmdbId: Int): Flow<Person?>
 }

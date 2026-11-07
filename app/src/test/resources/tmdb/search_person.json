@@ -1,0 +1,79 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "adult": false,
+      "gender": 1,
+      "id": 6817,
+      "known_for_department": "Directing",
+      "name": "Agnès Varda",
+      "original_name": "Agnès Varda",
+      "popularity": 1.3618,
+      "profile_path": "/aXnFLmz9EaRCt93uEXns8WVPmSG.jpg",
+      "known_for": [
+        {
+          "adult": false,
+          "backdrop_path": "/oyatchDPpS4I9jpIIezFJGrmXcR.jpg",
+          "id": 499,
+          "title": "Cléo from 5 to 7",
+          "original_title": "Cléo de 5 à 7",
+          "overview": "",
+          "poster_path": "/oelBStY4xpguaplRv15P3Za7Xsr.jpg",
+          "media_type": "movie",
+          "original_language": "fr",
+          "genre_ids": [
+            18
+          ],
+          "popularity": 4.0956,
+          "release_date": "1962-04-11",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.664,
+          "vote_count": 823
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/w4uYP6ebNaLQIjsHcjQhjz3BB2m.jpg",
+          "id": 451995,
+          "title": "Faces Places",
+          "original_title": "Visages Villages",
+          "overview": "",
+          "poster_path": "/1NX6NTj9FiiJwEgRUmEifSzE7Na.jpg",
+          "media_type": "movie",
+          "original_language": "fr",
+          "genre_ids": [
+            99
+          ],
+          "popularity": 1.6793,
+          "release_date": "2017-06-28",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.6,
+          "vote_count": 432
+        },
+        {
+          "adult": false,
+          "backdrop_path": "/tKsFh8qpYyi2AMg5O8QTVdChm4k.jpg",
+          "id": 44018,
+          "title": "Vagabond",
+          "original_title": "Sans toit ni loi",
+          "overview": "",
+          "poster_path": "/2KFfwiPct1hwqi9dkKqoom0BenC.jpg",
+          "media_type": "movie",
+          "original_language": "fr",
+          "genre_ids": [
+            18
+          ],
+          "popularity": 3.1697,
+          "release_date": "1985-12-04",
+          "softcore": false,
+          "video": false,
+          "vote_average": 7.4,
+          "vote_count": 384
+        }
+      ]
+    }
+  ],
+  "total_pages": 1,
+  "total_results": 1
+}

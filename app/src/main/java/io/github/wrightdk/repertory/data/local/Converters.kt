@@ -9,4 +9,12 @@ class Converters {
 
     @TypeConverter
     fun epochDayToLocalDate(epochDay: Long?): LocalDate? = epochDay?.let(LocalDate::ofEpochDay)
+
+    /** For short lists of simple tokens (TMDB image sizes). Items must not contain commas. */
+    @TypeConverter
+    fun stringListToString(list: List<String>): String = list.joinToString(",")
+
+    @TypeConverter
+    fun stringToStringList(value: String): List<String> =
+        if (value.isEmpty()) emptyList() else value.split(",")
 }

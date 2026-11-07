@@ -1,0 +1,341 @@
+{
+  "cast": [
+    {
+      "adult": false,
+      "backdrop_path": null,
+      "genre_ids": [
+        99,
+        10770
+      ],
+      "id": 929052,
+      "title": "Cinéma! Cinéma! The French New Wave",
+      "original_language": "en",
+      "original_title": "Cinéma! Cinéma! The French New Wave",
+      "overview": "",
+      "popularity": 0.5604,
+      "poster_path": null,
+      "release_date": "1992-06-18",
+      "softcore": false,
+      "video": false,
+      "vote_average": 3.3,
+      "vote_count": 3,
+      "character": "Self",
+      "credit_id": "61e8f451944a57009d4c299b",
+      "order": 4,
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/fGs4uCzpBcYBfqw4rINA7twHIGQ.jpg",
+      "genre_ids": [
+        53,
+        9648
+      ],
+      "id": 13440,
+      "title": "The Truth About Charlie",
+      "original_language": "en",
+      "original_title": "The Truth About Charlie",
+      "overview": "",
+      "popularity": 1.7787,
+      "poster_path": "/kQ6SdbWStviMhTFt5tatjpGvRGV.jpg",
+      "release_date": "2002-10-25",
+      "softcore": false,
+      "video": false,
+      "vote_average": 4.9,
+      "vote_count": 200,
+      "character": "The Widow Hyppolite",
+      "credit_id": "5d7e679212197e000e497ce5",
+      "order": 11,
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/8m7qOKlsdnxt4335vpFzpffuIVu.jpg",
+      "genre_ids": [
+        10749,
+        35,
+        18
+      ],
+      "id": 2433,
+      "title": "The Young Girls of Rochefort",
+      "original_language": "fr",
+      "original_title": "Les Demoiselles de Rochefort",
+      "overview": "",
+      "popularity": 3.2408,
+      "poster_path": "/jtxhyGaYhurH6KsjvP1jV3dDypz.jpg",
+      "release_date": "1967-03-08",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.7,
+      "vote_count": 684,
+      "character": "Music-Loving Nun (uncredited)",
+      "credit_id": "5ee44b570cb335001fbba3d6",
+      "order": 68,
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/u2xQsm38cenNLQpmpb8lkFPPkbb.jpg",
+      "genre_ids": [
+        99
+      ],
+      "id": 87772,
+      "origin_country": [
+        "FR"
+      ],
+      "original_language": "fr",
+      "original_name": "Varda par Agnès",
+      "overview": "",
+      "popularity": 1.4201,
+      "poster_path": "/gKkSlbMJiH6qlEcKGQjcPpZnEyW.jpg",
+      "first_air_date": "2019-03-18",
+      "softcore": false,
+      "name": "Varda by Agnès",
+      "vote_average": 9.0,
+      "vote_count": 2,
+      "character": "Self",
+      "credit_id": "5c92c8a70e0a261057e75c96",
+      "episode_count": 2,
+      "first_credit_air_date": "2019-03-18",
+      "media_type": "tv"
+    }
+  ],
+  "crew": [
+    {
+      "adult": false,
+      "backdrop_path": "/oyatchDPpS4I9jpIIezFJGrmXcR.jpg",
+      "genre_ids": [
+        18
+      ],
+      "id": 499,
+      "title": "Cléo from 5 to 7",
+      "original_language": "fr",
+      "original_title": "Cléo de 5 à 7",
+      "overview": "",
+      "popularity": 4.0956,
+      "poster_path": "/oelBStY4xpguaplRv15P3Za7Xsr.jpg",
+      "release_date": "1962-04-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.664,
+      "vote_count": 823,
+      "credit_id": "52fe424ac3a36847f8012c55",
+      "department": "Directing",
+      "job": "Director",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/tKsFh8qpYyi2AMg5O8QTVdChm4k.jpg",
+      "genre_ids": [
+        18
+      ],
+      "id": 44018,
+      "title": "Vagabond",
+      "original_language": "fr",
+      "original_title": "Sans toit ni loi",
+      "overview": "",
+      "popularity": 3.1697,
+      "poster_path": "/2KFfwiPct1hwqi9dkKqoom0BenC.jpg",
+      "release_date": "1985-12-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.4,
+      "vote_count": 384,
+      "credit_id": "52fe4671c3a36847f80ff735",
+      "department": "Directing",
+      "job": "Director",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/tKsFh8qpYyi2AMg5O8QTVdChm4k.jpg",
+      "genre_ids": [
+        18
+      ],
+      "id": 44018,
+      "title": "Vagabond",
+      "original_language": "fr",
+      "original_title": "Sans toit ni loi",
+      "overview": "",
+      "popularity": 3.1697,
+      "poster_path": "/2KFfwiPct1hwqi9dkKqoom0BenC.jpg",
+      "release_date": "1985-12-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.4,
+      "vote_count": 384,
+      "credit_id": "52fe4671c3a36847f80ff73b",
+      "department": "Writing",
+      "job": "Writer",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/sera0zxXBfTtKuwacI6Rx7rbSWB.jpg",
+      "genre_ids": [
+        99
+      ],
+      "id": 277677,
+      "title": "Uncle Yanco",
+      "original_language": "fr",
+      "original_title": "Oncle Yanco",
+      "overview": "",
+      "popularity": 1.4903,
+      "poster_path": "/ffZpsbJGuRoMKBQ1ZZ14v06NK7Y.jpg",
+      "release_date": "1967-10-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.2,
+      "vote_count": 58,
+      "credit_id": "53a43bf9c3a3682a3c00108b",
+      "department": "Directing",
+      "job": "Director",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/r5SoY1xdsTSdCabCqptdS9RfZIc.jpg",
+      "genre_ids": [
+        10770,
+        18
+      ],
+      "id": 324072,
+      "title": "Nausicaa",
+      "original_language": "fr",
+      "original_title": "Nausicaa",
+      "overview": "",
+      "popularity": 1.0038,
+      "poster_path": "/A3iktrA0d68WsebSDqqB7Cfg5RZ.jpg",
+      "release_date": "1971-01-01",
+      "softcore": false,
+      "video": false,
+      "vote_average": 6.3,
+      "vote_count": 11,
+      "credit_id": "54d5519bc3a3683b8c0001fa",
+      "department": "Directing",
+      "job": "Director",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/tKsFh8qpYyi2AMg5O8QTVdChm4k.jpg",
+      "genre_ids": [
+        18
+      ],
+      "id": 44018,
+      "title": "Vagabond",
+      "original_language": "fr",
+      "original_title": "Sans toit ni loi",
+      "overview": "",
+      "popularity": 3.1697,
+      "poster_path": "/2KFfwiPct1hwqi9dkKqoom0BenC.jpg",
+      "release_date": "1985-12-04",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.4,
+      "vote_count": 384,
+      "credit_id": "5648d8069251413ade00809a",
+      "department": "Editing",
+      "job": "Editor",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/oyatchDPpS4I9jpIIezFJGrmXcR.jpg",
+      "genre_ids": [
+        18
+      ],
+      "id": 499,
+      "title": "Cléo from 5 to 7",
+      "original_language": "fr",
+      "original_title": "Cléo de 5 à 7",
+      "overview": "",
+      "popularity": 4.0956,
+      "poster_path": "/oelBStY4xpguaplRv15P3Za7Xsr.jpg",
+      "release_date": "1962-04-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.664,
+      "vote_count": 823,
+      "credit_id": "63b7898769c70f00a780644d",
+      "department": "Writing",
+      "job": "Writer",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/w4uYP6ebNaLQIjsHcjQhjz3BB2m.jpg",
+      "genre_ids": [
+        99
+      ],
+      "id": 451995,
+      "title": "Faces Places",
+      "original_language": "fr",
+      "original_title": "Visages Villages",
+      "overview": "",
+      "popularity": 1.6793,
+      "poster_path": "/1NX6NTj9FiiJwEgRUmEifSzE7Na.jpg",
+      "release_date": "2017-06-28",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.6,
+      "vote_count": 432,
+      "credit_id": "58efb697c3a3684124000998",
+      "department": "Directing",
+      "job": "Director",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/oyatchDPpS4I9jpIIezFJGrmXcR.jpg",
+      "genre_ids": [
+        18
+      ],
+      "id": 499,
+      "title": "Cléo from 5 to 7",
+      "original_language": "fr",
+      "original_title": "Cléo de 5 à 7",
+      "overview": "",
+      "popularity": 4.0956,
+      "poster_path": "/oelBStY4xpguaplRv15P3Za7Xsr.jpg",
+      "release_date": "1962-04-11",
+      "softcore": false,
+      "video": false,
+      "vote_average": 7.664,
+      "vote_count": 823,
+      "credit_id": "5f32f69c59e8a90035832c68",
+      "department": "Sound",
+      "job": "Songs",
+      "media_type": "movie"
+    },
+    {
+      "adult": false,
+      "backdrop_path": "/u2xQsm38cenNLQpmpb8lkFPPkbb.jpg",
+      "genre_ids": [
+        99
+      ],
+      "id": 87772,
+      "origin_country": [
+        "FR"
+      ],
+      "original_language": "fr",
+      "original_name": "Varda par Agnès",
+      "overview": "",
+      "popularity": 1.4201,
+      "poster_path": "/gKkSlbMJiH6qlEcKGQjcPpZnEyW.jpg",
+      "first_air_date": "2019-03-18",
+      "softcore": false,
+      "name": "Varda by Agnès",
+      "vote_average": 9.0,
+      "vote_count": 2,
+      "credit_id": "5cd4ccea0e0a2630ab608794",
+      "department": "Directing",
+      "episode_count": 2,
+      "first_credit_air_date": "2019-03-18",
+      "job": "Director",
+      "media_type": "tv"
+    }
+  ],
+  "id": 6817
+}

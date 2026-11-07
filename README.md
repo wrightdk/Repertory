@@ -23,6 +23,20 @@ A free, open-source Android app for working through filmographies. Pick director
    ./gradlew installDebug
    ```
 
+## Testing
+
+Unit tests run offline against saved TMDB responses in `app/src/test/resources/tmdb/`:
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+To check that the build's TMDB key works against the real API (the only test that uses the network):
+
+```bash
+./gradlew testDebugUnitTest -PtmdbLive --tests '*TmdbLiveKeyTest'
+```
+
 ## Attribution
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
