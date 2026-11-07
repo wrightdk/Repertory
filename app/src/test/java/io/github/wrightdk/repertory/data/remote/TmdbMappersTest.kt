@@ -172,7 +172,7 @@ class TmdbMappersTest {
         assertEquals(fromCredits.cachedAt, merged.cachedAt)
     }
 
-    @Test fun `released depends on status once known, else on date`() {
+    @Test fun `released trusts Released and Canceled, else goes by date`() {
         val today = LocalDate.of(2026, 11, 7)
         fun film(date: LocalDate?, status: String?) = MovieDetailsDto(id = 1).toEntity(0).copy(releaseDate = date, status = status)
         val past = LocalDate.of(2023, 7, 21)
@@ -180,6 +180,8 @@ class TmdbMappersTest {
 
         assertTrue(film(past, "Released").isReleased(today))
         assertFalse(film(due, "Post Production").isReleased(today))
+        assertTrue("date passed, status not yet updated", film(past, "Post Production").isReleased(today))
+        assertTrue("released, undated", film(null, "Released").isReleased(today))
         assertFalse("canceled never counts", film(past, "Canceled").isReleased(today))
         assertTrue("no details yet, dated in the past", film(past, null).isReleased(today))
         assertTrue("released today", film(today, null).isReleased(today))

@@ -12,9 +12,8 @@ import io.github.wrightdk.repertory.ui.screens.FilmographyScreen
 import io.github.wrightdk.repertory.ui.screens.HomeScreen
 import io.github.wrightdk.repertory.ui.screens.SearchScreen
 
-// Placeholder IDs so the skeleton can be walked end to end before real data exists.
+// Placeholder ID so Home can open a filmography before the real list exists.
 private const val SAMPLE_TRACKED_PERSON_ID = 1L
-private const val SAMPLE_FILM_ID = 680 // Pulp Fiction on TMDB
 
 @Composable
 fun RepertoryNavHost() {
@@ -54,7 +53,7 @@ fun RepertoryNavHost() {
             FilmographyScreen(
                 trackedPersonId = route.trackedPersonId,
                 onBack = back,
-                onFilmSelected = { navController.navigate(FilmDetailRoute(SAMPLE_FILM_ID)) },
+                onFilmSelected = { filmId -> navController.navigate(FilmDetailRoute(filmId)) },
             )
         }
         composable<FilmDetailRoute> { entry ->

@@ -46,16 +46,22 @@ data class Film(
 
     /**
      * Whether the film is out, so it can be ticked and counts towards progress.
-     * Trusts the movie status once details are fetched; otherwise goes by date,
-     * and an undated title counts as unreleased.
+     * "Released" is trusted and "Canceled" never counts; otherwise it goes by
+     * date, so a film becomes released the day its date passes even while the
+     * cached status still says "Post Production" (TMDB statuses often lag).
+     * An undated title counts as unreleased.
      */
-    fun isReleased(today: LocalDate): Boolean = when {
-        status == STATUS_RELEASED -> true
-        status != null -> false
+    fun isReleased(today: LocalDate): Boolean = when (status) {
+        STATUS_RELEASED -> true
+        STATUS_CANCELED -> false
         else -> releaseDate != null && !releaseDate.isAfter(today)
     }
 
+    /** TMDB says it will never come out; lists leave it out entirely. */
+    val isCanceled: Boolean get() = status == STATUS_CANCELED
+
     companion object {
         const val STATUS_RELEASED = "Released"
+        const val STATUS_CANCELED = "Canceled"
     }
 }

@@ -18,6 +18,9 @@ import io.github.wrightdk.repertory.data.remote.mergedWith
 import io.github.wrightdk.repertory.data.remote.tmdbCall
 import io.github.wrightdk.repertory.data.remote.toEntities
 import io.github.wrightdk.repertory.data.remote.toEntity
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.async
@@ -29,6 +32,8 @@ import kotlinx.coroutines.flow.Flow
 data class CachePolicy(
     val person: Duration = 7.days,
     val filmDetails: Duration = 30.days,
+    /** Unreleased films change (date, status, runtime) as release nears, so check them more often. */
+    val unreleasedFilmDetails: Duration = 1.days,
     val imageConfig: Duration = 3.days,
 )
 
@@ -170,11 +175,15 @@ class TmdbRepository(
 
     /**
      * Fetches `/movie/{id}` for [movieId] unless details were cached within
-     * [CachePolicy.filmDetails]. TV series have no details to fetch.
+     * [CachePolicy.filmDetails] ([CachePolicy.unreleasedFilmDetails] for a film
+     * that isn't out yet). TV series have no details to fetch.
      */
     suspend fun refreshMovie(movieId: Int, force: Boolean = false): TmdbResult<Unit> {
-        val cachedAt = filmDao.get(MediaType.MOVIE, movieId)?.detailsCachedAt
-        if (!force && cachedAt != null && isFresh(cachedAt, cachePolicy.filmDetails)) {
+        val cached = filmDao.get(MediaType.MOVIE, movieId)
+        val cachedAt = cached?.detailsCachedAt
+        val upcoming = cached != null && !cached.isCanceled && !cached.isReleased(today())
+        val ttl = if (upcoming) cachePolicy.unreleasedFilmDetails else cachePolicy.filmDetails
+        if (!force && cachedAt != null && isFresh(cachedAt, ttl)) {
             return TmdbResult.Success(Unit)
         }
         return fetchMovieDetails(movieId).map { }
@@ -224,6 +233,8 @@ class TmdbRepository(
     // ----
 
     private suspend fun <T> call(block: suspend () -> T): TmdbResult<T> = tmdbCall(retryPolicy, block)
+
+    private fun today(): LocalDate = Instant.ofEpochMilli(clock()).atZone(ZoneId.systemDefault()).toLocalDate()
 
     private fun isFresh(cachedAt: Long, ttl: Duration): Boolean =
         (clock() - cachedAt) in 0 until ttl.inWholeMilliseconds

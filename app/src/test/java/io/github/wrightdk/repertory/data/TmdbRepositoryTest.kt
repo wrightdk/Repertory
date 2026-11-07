@@ -273,6 +273,17 @@ class TmdbRepositoryTest {
         assertEquals(2, tmdb.requestCount("/movie/499"))
     }
 
+    @Test fun `details of unreleased films go stale after a day`() = runTest {
+        tmdb.routeFixture("/movie/499", "movie_feature.json")
+        repo.refreshMovie(499)
+        val film = db.filmDao().get(MediaType.MOVIE, 499)!!
+        db.filmDao().upsert(film.copy(status = "Post Production", releaseDate = null))
+
+        now += 2.days.inWholeMilliseconds
+        repo.refreshMovie(499)
+        assertEquals(2, tmdb.requestCount("/movie/499"))
+    }
+
     // ---- User data ----
 
     @Test fun `viewing is per film, with an optional date`() = runTest {

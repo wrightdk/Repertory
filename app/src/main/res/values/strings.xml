@@ -44,4 +44,47 @@
     <string name="add_person_error_other_body">Something went wrong at TMDB. Try again in a moment.</string>
     <string name="add_person_error_missing_title">TMDB no longer has this person.</string>
     <string name="add_person_error_missing_body">They may have been merged with another entry. Go back and search again.</string>
+
+    <!-- Filmography -->
+    <string name="on_your_list">On your list</string>
+    <string name="on_your_list_description">On your list. Tap to remove</string>
+    <string name="progress_of">of %1$d</string>
+    <string name="progress_percent">%1$d%%</string>
+    <string name="progress_percent_none">—</string>
+    <string name="progress_description">%1$d of %2$d seen</string>
+    <string name="decade">%1$ds</string>
+    <string name="decade_undated">No date yet</string>
+    <string name="as_character">as %1$s</string>
+    <string name="runtime_minutes">%1$d min</string>
+    <string name="category_short">Short</string>
+    <string name="category_tv">TV</string>
+    <string name="category_documentary">Documentary</string>
+    <string name="category_self">Self</string>
+    <string name="category_minor_role">Minor role</string>
+    <string name="seen">Seen</string>
+    <string name="seen_on">Seen %1$s</string>
+    <string name="unreleased_due">Unreleased, due %1$s</string>
+    <string name="unreleased">Unreleased</string>
+    <string name="mark_as_seen">Mark as seen</string>
+    <string name="mark_as_not_seen">Mark as not seen</string>
+    <string name="not_out_yet">Not out yet</string>
+    <string name="filter_hiding">Hiding %1$s</string>
+    <string name="filter_showing_everything">Showing everything</string>
+    <string name="filter_custom_hiding">Custom list: hiding %1$s</string>
+    <string name="filter_custom_showing_everything">Custom list: showing everything</string>
+    <string name="filter_hide_shorts">shorts</string>
+    <string name="filter_hide_tv">TV</string>
+    <string name="filter_hide_documentaries">documentaries</string>
+    <string name="filter_hide_self">appearances as self</string>
+    <string name="filter_hide_minor_roles">minor roles</string>
+    <string name="list_and">%1$s and %2$s</string>
+    <string name="fetching_filmography">Fetching filmography from TMDB…</string>
+    <string name="filmography_nothing_shown_title">Nothing to show.</string>
+    <string name="filmography_nothing_shown_body">This list’s filters hide every film TMDB has for this role.</string>
+    <string name="filmography_error_other_title">Couldn’t load this filmography.</string>
+    <string name="filmography_error_other_body">Something went wrong at TMDB. Try again in a moment.</string>
+    <string name="filmography_missing_title">This list is gone.</string>
+    <string name="filmography_missing_body">It’s no longer on your list. Go back to see the rest.</string>
+    <string name="ticked_off">Ticked off %1$s, %2$d of %3$d seen</string>
+    <string name="ticked_off_all">%1$s — that’s all %2$d.</string>
 </resources>
