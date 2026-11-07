@@ -10,14 +10,13 @@ A free, open-source Android app for working through filmographies. Pick director
 
 ## Building
 
-1. Get a free API key from [TMDB](https://www.themoviedb.org/settings/api).
-2. Add it to `local.properties` in the project root (this file is git-ignored):
+1. The app's TMDB API key lives in `gradle.properties` as `TMDB_API_KEY`. To use your own key for development, get one from [TMDB](https://www.themoviedb.org/settings/api) and put it in `local.properties` in the project root (git-ignored), which takes precedence:
 
    ```properties
    TMDB_API_KEY=your_key_here
    ```
 
-   Alternatively, set a `TMDB_API_KEY` environment variable.
+2. Alternatively, set a `TMDB_API_KEY` environment variable (also overrides `gradle.properties`).
 3. Build and install a debug build on a connected device:
 
    ```bash
