@@ -6,6 +6,9 @@ import io.github.wrightdk.repertory.data.FilmDetailsSync
 import io.github.wrightdk.repertory.data.SettingsStore
 import io.github.wrightdk.repertory.data.Suggestion
 import io.github.wrightdk.repertory.data.TmdbRepository
+import io.github.wrightdk.repertory.data.backup.Backup
+import io.github.wrightdk.repertory.data.backup.BackupManager
+import io.github.wrightdk.repertory.data.backup.RestoreMode
 import io.github.wrightdk.repertory.data.parseSuggestions
 import io.github.wrightdk.repertory.data.local.RepertoryDatabase
 import io.github.wrightdk.repertory.data.remote.ApiKeyProvider
@@ -66,6 +69,8 @@ class AppContainer(context: Context) {
             trackedList = database.trackedPersonDao()::get,
             listIdsMissingDetails = database.filmDao().observeListIdsMissingDetails(),
             fillMissingFilmDetails = tmdbRepository::fillMissingFilmDetails,
+            listIdsMissingPerson = database.trackedPersonDao().observeIdsMissingPerson(),
+            fetchPersonIfMissing = tmdbRepository::fetchPersonIfMissing,
             log = { Log.i("Repertory", it) },
         )
     }
@@ -83,6 +88,19 @@ class AppContainer(context: Context) {
     fun setOwnTmdbApiKey(key: String?) {
         settings.setOwnTmdbApiKey(key)
         filmDetailsSync.retryFailed()
+    }
+
+    val backupManager: BackupManager by lazy {
+        BackupManager(database = database, settings = settings, appVersion = BuildConfig.VERSION_NAME)
+    }
+
+    /**
+     * Restores [backup], then fetches from TMDB whatever the restored lists
+     * need that this phone hasn't cached (people, credits, film details).
+     */
+    suspend fun restoreBackup(backup: Backup, mode: RestoreMode) {
+        backupManager.restore(backup, mode)
+        filmDetailsSync.backfill()
     }
 
     /** The people offered on the empty Home screen, from `assets/suggestions.json` (see `scripts/`). */

@@ -19,6 +19,9 @@ class FilmDetailsSyncTest {
     private val missing = MutableStateFlow<List<Long>>(emptyList())
     private var result: TmdbResult<Int> = TmdbResult.Success(3)
     private var gate: CompletableDeferred<Unit>? = null
+    private val missingPerson = MutableStateFlow<List<Long>>(emptyList())
+    private val personFetches = mutableListOf<Int>()
+    private var personResult: TmdbResult<Unit> = TmdbResult.Success(Unit)
 
     private fun TestScope.sync() = FilmDetailsSync(
         scope = backgroundScope,
@@ -28,6 +31,11 @@ class FilmDetailsSyncTest {
             calls += person to department
             gate?.await()
             result
+        },
+        listIdsMissingPerson = missingPerson,
+        fetchPersonIfMissing = { personId ->
+            personFetches += personId
+            personResult
         },
     )
 
@@ -115,5 +123,30 @@ class FilmDetailsSyncTest {
         sync().backfill()
         runCurrent()
         assertEquals(setOf(3895 to "Acting", 45400 to "Directing"), calls.toSet())
+    }
+
+    @Test fun `backfill also picks up lists restored without their person`() = runTest {
+        val restored = track(240, "Directing")
+        val loading = track(3636, "Acting")
+        missingPerson.value = listOf(restored)
+        missing.value = listOf(loading, restored)
+        val sync = sync()
+
+        sync.backfill()
+        runCurrent()
+        assertEquals(listOf(240, 3636), personFetches)
+        assertEquals("each list once, person first", setOf(240 to "Directing", 3636 to "Acting"), calls.toSet())
+        assertEquals(2, calls.size)
+    }
+
+    @Test fun `a failed person fetch stops the list before its details`() = runTest {
+        val id = track(240, "Directing")
+        val sync = sync()
+        personResult = TmdbResult.Failure(TmdbError.NoNetwork)
+
+        sync.enqueue(id)
+        runCurrent()
+        assertEquals(DetailsSyncState.Failed(TmdbError.NoNetwork), sync.states.value[id])
+        assertEquals(emptyList<Pair<Int, String>>(), calls)
     }
 }

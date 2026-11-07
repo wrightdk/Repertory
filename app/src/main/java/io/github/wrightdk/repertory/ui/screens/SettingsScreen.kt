@@ -1,5 +1,7 @@
 package io.github.wrightdk.repertory.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -24,11 +26,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -44,6 +51,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.wrightdk.repertory.R
 import io.github.wrightdk.repertory.appContainer
 import io.github.wrightdk.repertory.data.FilmCategory
@@ -57,13 +65,15 @@ import io.github.wrightdk.repertory.ui.theme.spacing
 
 /**
  * From design/settings-*.png: the filter defaults every list follows unless it
- * has its own, the theme, and About. Plus the own TMDB key (not in the
- * mockup), styled like the About row. [openApiKeyDialog] opens straight onto
+ * has its own, the theme, and About. Plus, not in the mockup and styled like
+ * the About row: back up and restore ("Your data", see [BackupViewModel]) and
+ * the own TMDB key. [openApiKeyDialog] opens straight onto
  * the key dialog, for the way in from a key error.
  */
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Boolean = false) {
-    val container = LocalContext.current.appContainer
+    val context = LocalContext.current
+    val container = context.appContainer
     val settings = container.settings
     val defaults by settings.filterDefaults.collectAsStateWithLifecycle()
     val theme by settings.themeMode.collectAsStateWithLifecycle()
@@ -71,8 +81,31 @@ fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Bo
     var keyDialogOpen by rememberSaveable { mutableStateOf(openApiKeyDialog) }
     val spacing = MaterialTheme.spacing
 
+    val backup: BackupViewModel = viewModel(factory = BackupViewModel.factory(container, context.contentResolver))
+    val backupState by backup.state.collectAsStateWithLifecycle()
+    val saveBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE), backup::save)
+    val openBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(), backup::open)
+    val resources = LocalResources.current
+    val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(backup) {
+        backup.messages.collect { m ->
+            val text = when (m) {
+                is BackupMessage.Saved -> resources.getString(
+                    R.string.backup_saved,
+                    resources.getQuantityString(R.plurals.backup_lists, m.lists, m.lists),
+                    resources.getQuantityString(R.plurals.backup_films_seen, m.seen, m.seen),
+                )
+                BackupMessage.SaveFailed -> resources.getString(R.string.backup_save_failed)
+                BackupMessage.Restored -> resources.getString(R.string.restored)
+                BackupMessage.RestoreFailed -> resources.getString(R.string.restore_failed)
+            }
+            snackbar.showSnackbar(text)
+        }
+    }
+
     Scaffold(
         topBar = { RepertoryTopBar(title = { Text(stringResource(R.string.settings)) }, onBack = onBack) },
+        snackbarHost = { SnackbarHost(snackbar) },
     ) { innerPadding ->
         Column(
             Modifier
@@ -109,6 +142,35 @@ fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Bo
                 Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.headlineSmall)
                 ThemePicker(theme, onPick = settings::setThemeMode)
             }
+            HorizontalDivider(Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.xl))
+            Text(
+                stringResource(R.string.settings_your_data),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.gutter, bottom = spacing.sm),
+            )
+            val idle = backupState == BackupUiState.Idle
+            NavigationRow(
+                icon = R.drawable.ic_download,
+                label = stringResource(R.string.settings_back_up),
+                supporting = stringResource(
+                    if (backupState == BackupUiState.Saving) R.string.settings_backing_up else R.string.settings_back_up_body,
+                ),
+                onClick = { saveBackup.launch(resources.getString(R.string.backup_file_name, backup.fileDate())) },
+                enabled = idle,
+            )
+            NavigationRow(
+                icon = R.drawable.ic_upload,
+                label = stringResource(R.string.settings_restore),
+                supporting = stringResource(
+                    when (backupState) {
+                        BackupUiState.Reading -> R.string.settings_reading_backup
+                        BackupUiState.Restoring -> R.string.settings_restoring
+                        else -> R.string.settings_restore_body
+                    },
+                ),
+                onClick = { openBackup.launch(BACKUP_OPEN_MIME_TYPES) },
+                enabled = idle,
+            )
             HorizontalDivider(Modifier.padding(top = spacing.xl))
             NavigationRow(
                 icon = R.drawable.ic_key,
@@ -136,7 +198,18 @@ fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Bo
             onDismiss = { keyDialogOpen = false },
         )
     }
+
+    when (val state = backupState) {
+        is BackupUiState.Confirm -> RestoreBackupDialog(state.backup, onRestore = backup::confirm, onDismiss = backup::dismiss)
+        is BackupUiState.Invalid -> InvalidBackupDialog(state.error, onDismiss = backup::dismiss)
+        else -> Unit
+    }
 }
+
+private const val BACKUP_MIME_TYPE = "application/json"
+
+/** Some file managers and cloud drives don't label .json files as JSON, so accept the usual fallbacks too. */
+private val BACKUP_OPEN_MIME_TYPES = arrayOf(BACKUP_MIME_TYPE, "text/*", "application/octet-stream")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,11 +264,17 @@ private fun ThemePicker(selected: ThemeMode, onPick: (ThemeMode) -> Unit) {
 
 /** The mockup's About row: icon, label (and optional supporting line), chevron. */
 @Composable
-private fun NavigationRow(@DrawableRes icon: Int, label: String, onClick: () -> Unit, supporting: String? = null) {
+private fun NavigationRow(
+    @DrawableRes icon: Int,
+    label: String,
+    onClick: () -> Unit,
+    supporting: String? = null,
+    enabled: Boolean = true,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = MaterialTheme.spacing.gutter, vertical = MaterialTheme.spacing.md)
             .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,

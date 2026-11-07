@@ -92,6 +92,30 @@ interface TrackedPersonDao {
     @Query("SELECT id FROM tracked_person WHERE personId = :personId AND department = :department")
     suspend fun idFor(personId: Int, department: String): Long?
 
+    @Query("SELECT * FROM tracked_person WHERE personId = :personId AND department = :department")
+    suspend fun find(personId: Int, department: String): TrackedPerson?
+
+    /** Every list, oldest first, for a backup. */
+    @Query("SELECT * FROM tracked_person ORDER BY addedAt, personId, department")
+    suspend fun getAll(): List<TrackedPerson>
+
+    /** Removes every list, for restoring a backup over them. Viewings are separate. */
+    @Query("DELETE FROM tracked_person")
+    suspend fun deleteAll()
+
+    /**
+     * Lists whose person has never been fetched, e.g. just restored from a
+     * backup onto a phone without the TMDB cache.
+     */
+    @Query(
+        """
+        SELECT tracked_person.id FROM tracked_person
+        LEFT JOIN person ON person.tmdbId = tracked_person.personId
+        WHERE person.tmdbId IS NULL
+        """
+    )
+    fun observeIdsMissingPerson(): Flow<List<Long>>
+
     /**
      * Tracks [personId] in each of [departments], skipping any already tracked.
      * Returns the list ids in the same order, existing lists included.

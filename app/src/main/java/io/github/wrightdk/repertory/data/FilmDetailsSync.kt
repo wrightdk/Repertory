@@ -10,9 +10,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Where a list's background details fetch stands. */
 sealed interface DetailsSyncState {
@@ -28,14 +31,23 @@ sealed interface DetailsSyncState {
  * carries on when the user leaves the screen that started it. If the process
  * dies part way, [backfill] at the next start picks up where it left off,
  * since only films still missing details are fetched.
+ *
+ * A list restored from a backup arrives without its person or credits, so
+ * those are fetched first ([fetchPersonIfMissing]), one person at a time so a
+ * person on the list in two roles is only fetched once.
  */
 class FilmDetailsSync(
     private val scope: CoroutineScope,
     private val trackedList: suspend (trackedPersonId: Long) -> TrackedPerson?,
     private val listIdsMissingDetails: Flow<List<Long>>,
     private val fillMissingFilmDetails: suspend (personId: Int, department: String) -> TmdbResult<Int>,
+    /** Ids of lists whose person has never been fetched (restored from a backup). */
+    private val listIdsMissingPerson: Flow<List<Long>> = flowOf(emptyList()),
+    /** Fetches the person and their credits unless they're already cached. */
+    private val fetchPersonIfMissing: suspend (personId: Int) -> TmdbResult<Unit> = { TmdbResult.Success(Unit) },
     private val log: (String) -> Unit = {},
 ) {
+    private val personMutex = Mutex()
     private val jobs = mutableMapOf<Long, Job>()
     private val _states = MutableStateFlow<Map<Long, DetailsSyncState>>(emptyMap())
 
@@ -53,9 +65,12 @@ class FilmDetailsSync(
         }
     }
 
-    /** Starts a fetch for every list that has films without details, e.g. lists added before this existed. */
+    /**
+     * Starts a fetch for every list that has films without details (e.g. lists
+     * added before this existed) or no person yet (just restored from a backup).
+     */
     fun backfill() {
-        scope.launch { listIdsMissingDetails.first().forEach(::enqueue) }
+        scope.launch { (listIdsMissingPerson.first() + listIdsMissingDetails.first()).distinct().forEach(::enqueue) }
     }
 
     /**
@@ -71,7 +86,14 @@ class FilmDetailsSync(
 
     private suspend fun run(trackedPersonId: Long) {
         val list = trackedList(trackedPersonId)
-        val result = if (list == null) TmdbResult.Success(0) else fillMissingFilmDetails(list.personId, list.department)
+        val result = if (list == null) {
+            TmdbResult.Success(0)
+        } else {
+            when (val person = personMutex.withLock { fetchPersonIfMissing(list.personId) }) {
+                is TmdbResult.Success -> fillMissingFilmDetails(list.personId, list.department)
+                is TmdbResult.Failure -> person
+            }
+        }
         log("List $trackedPersonId details: $result")
         _states.update { states ->
             when (result) {

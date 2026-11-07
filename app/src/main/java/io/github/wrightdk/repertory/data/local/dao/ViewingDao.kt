@@ -22,4 +22,18 @@ interface ViewingDao {
 
     @Query("SELECT * FROM viewing")
     fun observeAll(): Flow<List<Viewing>>
+
+    @Query("SELECT * FROM viewing WHERE mediaType = :mediaType AND filmId = :filmId")
+    suspend fun get(mediaType: MediaType, filmId: Int): Viewing?
+
+    /** Every ticked film, in a stable order, for a backup. */
+    @Query("SELECT * FROM viewing ORDER BY mediaType, filmId")
+    suspend fun getAll(): List<Viewing>
+
+    @Upsert
+    suspend fun upsertAll(viewings: List<Viewing>)
+
+    /** Unticks everything, for restoring a backup over it. */
+    @Query("DELETE FROM viewing")
+    suspend fun deleteAll()
 }

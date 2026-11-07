@@ -66,7 +66,8 @@ internal fun homeRow(
     images: ImageConfig,
     photoMinWidthPx: Int,
 ): HomeRow {
-    val progress = if (detailsComplete) {
+    // Without the person (a list just restored from a backup) there are no credits yet either.
+    val progress = if (detailsComplete && person != null) {
         val content = filmographyContent(
             credits = credits,
             personName = person?.name,
@@ -87,7 +88,7 @@ internal fun homeRow(
         photoUrl = person?.let { images.profileUrl(it.profilePath, photoMinWidthPx) },
         role = roleLabel(list.department),
         progress = progress,
-        detailsFailed = !detailsComplete && detailsFailed,
+        detailsFailed = progress == null && detailsFailed,
         updatedAt = list.updatedAt,
     )
 }

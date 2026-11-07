@@ -199,6 +199,14 @@ class TmdbRepository(
         return TmdbResult.Success(Unit)
     }
 
+    /**
+     * Fetches the person and their credits only if they've never been cached,
+     * e.g. for a list just restored from a backup. A stale cache is left for
+     * the screens to refresh.
+     */
+    suspend fun fetchPersonIfMissing(personId: Int): TmdbResult<Unit> =
+        if (personDao.get(personId) != null) TmdbResult.Success(Unit) else refreshPerson(personId)
+
     // ---- Films ----
 
     fun observeFilm(mediaType: MediaType, filmId: Int): Flow<Film?> = filmDao.observe(mediaType, filmId)

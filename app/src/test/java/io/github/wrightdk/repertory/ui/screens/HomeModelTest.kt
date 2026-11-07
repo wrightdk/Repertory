@@ -86,6 +86,25 @@ class HomeModelTest {
     }
 
     @Test
+    fun `a list restored without its person has no count yet`() {
+        val r = homeRow(
+            list = directing,
+            person = null,
+            credits = emptyList(),
+            detailsComplete = true,
+            detailsFailed = true,
+            viewings = emptyMap(),
+            defaults = FilmographyFilters.DEFAULTS,
+            today = today,
+            images = ImageConfig.DEFAULT,
+            photoMinWidthPx = 0,
+        )
+        assertNull("not \"All 0 seen\"", r.progress)
+        assertNull(r.name)
+        assertTrue("a failed person fetch shows as failed", r.detailsFailed)
+    }
+
+    @Test
     fun `all seen only when there is something to count`() {
         assertTrue(HomeProgress(3, 3).done)
         assertFalse(HomeProgress(0, 0).done)

@@ -211,6 +211,43 @@
     <string name="own_key_error_offline">Can’t reach TMDB to check the key. Check your connection and try again.</string>
     <string name="own_key_error_other">Couldn’t check the key with TMDB. Try again in a moment.</string>
 
+    <!-- Settings: back up and restore -->
+    <string name="settings_your_data">Your data</string>
+    <string name="settings_back_up">Back up my data</string>
+    <string name="settings_back_up_body">Save your lists, ticked films and settings to a file.</string>
+    <string name="settings_backing_up">Saving the backup…</string>
+    <string name="settings_restore">Restore from backup</string>
+    <string name="settings_restore_body">Bring back your lists from a backup file.</string>
+    <string name="settings_reading_backup">Reading the file…</string>
+    <string name="settings_restoring">Restoring…</string>
+    <string name="backup_file_name" translatable="false">repertory-backup-%1$s.json</string>
+    <plurals name="backup_lists">
+        <item quantity="one">%1$d list</item>
+        <item quantity="other">%1$d lists</item>
+    </plurals>
+    <plurals name="backup_films_seen">
+        <item quantity="one">%1$d film seen</item>
+        <item quantity="other">%1$d films seen</item>
+    </plurals>
+    <string name="backup_saved">Backup saved: %1$s and %2$s</string>
+    <string name="backup_save_failed">Couldn’t save the backup. Try again, or save it somewhere else.</string>
+    <string name="restore_title">Restore this backup?</string>
+    <string name="restore_summary">Made on %1$s: %2$s and %3$s.</string>
+    <string name="restore_merge">Merge</string>
+    <string name="restore_merge_body">Keep everything on this phone and add what’s in the backup.</string>
+    <string name="restore_replace">Replace everything</string>
+    <string name="restore_replace_body">Swap your lists, ticked films and settings for the backup’s.</string>
+    <string name="restore_confirm">Restore</string>
+    <string name="restored">Backup restored</string>
+    <string name="restore_failed">Couldn’t restore the backup. Nothing on this phone has changed.</string>
+    <string name="restore_invalid_title">Can’t restore this file</string>
+    <string name="restore_invalid_not_backup">This isn’t a backup from this app. Choose a file saved with Back up my data.</string>
+    <string name="restore_invalid_too_new">This backup was made by a newer version of the app. Update it, then try again.</string>
+    <string name="restore_invalid_damaged">This backup is damaged or incomplete.</string>
+    <string name="restore_invalid_unreadable">Couldn’t open the file. Try again, or choose another copy.</string>
+    <string name="restore_invalid_too_large">This file is too big to be a backup from this app.</string>
+    <string name="restore_invalid_nothing_changed">Nothing on this phone has changed.</string>
+
     <!-- About -->
     <string name="about_version">Version %1$s</string>
     <string name="about_description">A notebook for working through filmographies. No accounts, no ads, no tracking. Your list is kept on this phone and never sent to us.</string>
