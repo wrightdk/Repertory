@@ -1,0 +1,21 @@
+# Local config (SDK path, TMDB API key)
+local.properties
+
+# Gradle / Kotlin
+.gradle/
+.kotlin/
+build/
+
+# Android Studio / IntelliJ (all IDE files are per-user)
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing
+*.jks
+*.keystore
+
+# OS
+.DS_Store
