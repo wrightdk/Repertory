@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun AddPersonScreen(personId: Int, onBack: () -> Unit, onAdded: () -> Unit) {
-    PlaceholderScaffold(title = "Add person", onBack = onBack) {
+    PlaceholderScaffold(title = "Add to your list", onBack = onBack) {
         Text("Person ID: $personId")
         Text("Role picker (Directing, Acting, Writing…) goes here.")
         Button(onClick = onAdded) { Text("Add and open filmography") }

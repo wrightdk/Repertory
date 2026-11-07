@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun SearchScreen(onBack: () -> Unit, onPersonSelected: () -> Unit) {
-    PlaceholderScaffold(title = "Search", onBack = onBack) {
+    PlaceholderScaffold(title = "Search people", onBack = onBack) {
         Text("Person search via TMDB goes here.")
         Button(onClick = onPersonSelected) { Text("Pick a sample person") }
     }

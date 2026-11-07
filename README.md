@@ -41,6 +41,11 @@ To check that the build's TMDB key works against the real API (the only test tha
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
 
+Bundled third-party assets:
+
+- [Newsreader](https://github.com/productiontype/Newsreader) and [IBM Plex Sans](https://github.com/IBM/plex) fonts, under the SIL Open Font License 1.1 (see `third_party/fonts/`).
+- [Material Symbols](https://github.com/google/material-design-icons) icons, under the Apache License 2.0.
+
 ## Licence
 
 [GPL-3.0](LICENSE)
