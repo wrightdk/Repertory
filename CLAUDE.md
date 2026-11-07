@@ -53,7 +53,7 @@ App name: **Repertory** (working name). Package / applicationId: `io.github.wrig
   - `/movie/{id}`
   - `/configuration` for image base URLs
 - Cache fetched person and film data locally so the app works offline once loaded.
-- **Attribution (required):** About screen with the TMDB logo and the line "This product uses the TMDB API but is not endorsed or certified by TMDB." TMDB logo less prominent than our own branding.
+- **Attribution (required):** About screen with the TMDB logo and the line "This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB." TMDB logo less prominent than our own branding.
 
 ## Design
 

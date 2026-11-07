@@ -221,7 +221,7 @@
     <string name="about_source_code">Source code</string>
     <string name="about_film_data">Film data</string>
     <string name="about_tmdb_logo">TMDB</string>
-    <string name="about_tmdb_attribution">This product uses the TMDB API but is not endorsed or certified by TMDB.</string>
+    <string name="about_tmdb_attribution">This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</string>
     <string name="licence_title_app">Licence</string>
     <string name="licence_title_fonts">Font licences</string>
 </resources>

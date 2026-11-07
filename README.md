@@ -47,7 +47,7 @@ python3 scripts/generate_suggestions.py
 
 ## Attribution
 
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.
 
 Bundled third-party assets:
 
