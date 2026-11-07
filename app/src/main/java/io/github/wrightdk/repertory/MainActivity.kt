@@ -6,7 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,7 +38,13 @@ class MainActivity : ComponentActivity() {
                 onDispose {}
             }
             RepertoryTheme(darkTheme = dark) {
-                RepertoryNavHost()
+                // Paper behind every screen. Mid-transition both screens are part
+                // faded, and the window background shows through; that follows
+                // the system's dark mode, not the app's theme, so it could flash
+                // charcoal between two light screens.
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    RepertoryNavHost()
+                }
             }
         }
     }
