@@ -19,3 +19,6 @@ captures/
 
 # OS
 .DS_Store
+
+# Design mockups (kept locally, not published)
+/design/
