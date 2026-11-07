@@ -92,4 +92,37 @@
     <string name="film_details_failed_title">Couldn’t finish loading film details.</string>
     <string name="film_details_failed_offline">Check your connection and try again. The count shows once every film is in.</string>
     <string name="ticked_off_all">%1$s — that’s all %2$d.</string>
+
+    <!-- Filters: labels and descriptions shared by Settings and the per-list sheet -->
+    <string name="filter_shorts">Shorts</string>
+    <string name="filter_tv">TV</string>
+    <string name="filter_documentaries">Documentaries</string>
+    <string name="filter_self">Appearances as self</string>
+    <string name="filter_minor_roles">Minor roles</string>
+    <string name="filter_shorts_description">40 minutes or less</string>
+    <string name="filter_tv_description">Series, TV films and specials</string>
+    <string name="filter_documentaries_description">Non-fiction features</string>
+    <string name="filter_self_description">Interviews, making-ofs, talk shows</string>
+    <string name="filter_minor_roles_description">Small or uncredited parts</string>
+
+    <!-- Show in this list sheet -->
+    <string name="filter_sheet_title">Show in this list</string>
+    <string name="filter_sheet_body">Changes apply to this list only. Hidden films don’t count towards your progress.</string>
+    <plurals name="filter_sheet_count">
+        <item quantity="one">%1$d in this list</item>
+        <item quantity="other">%1$d in this list</item>
+    </plurals>
+    <string name="filter_sheet_none">None in this list</string>
+    <string name="use_defaults">Use defaults</string>
+    <string name="done">Done</string>
+    <string name="filter_summary_action">Change what this list shows</string>
+
+    <!-- Settings -->
+    <string name="settings_show_in_lists">Show in lists</string>
+    <string name="settings_show_in_lists_body">Choose what content appears in filmographies by default.</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="about">About</string>
 </resources>

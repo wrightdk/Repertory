@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
 import kotlinx.coroutines.flow.Flow
 
@@ -31,6 +32,25 @@ interface TrackedPersonDao {
     /** Marks the list as just updated, for the Recent sort. */
     @Query("UPDATE tracked_person SET updatedAt = :now WHERE id = :id")
     suspend fun touch(id: Long, now: Long)
+
+    @Query(
+        """
+        UPDATE tracked_person SET filter_showShorts = :shorts, filter_showTv = :tv,
+            filter_showDocumentaries = :documentaries, filter_showSelf = :self, filter_showMinorRoles = :minorRoles
+        WHERE id = :id
+        """
+    )
+    suspend fun setFilterColumns(id: Long, shorts: Boolean?, tv: Boolean?, documentaries: Boolean?, self: Boolean?, minorRoles: Boolean?)
+
+    /** Gives the list its own filters, or with null makes it follow the defaults again. */
+    suspend fun setFilterOverride(id: Long, filters: FilmographyFilters?) = setFilterColumns(
+        id,
+        filters?.showShorts,
+        filters?.showTv,
+        filters?.showDocumentaries,
+        filters?.showSelf,
+        filters?.showMinorRoles,
+    )
 
     @Query("SELECT * FROM tracked_person ORDER BY addedAt DESC")
     fun observeAll(): Flow<List<TrackedPerson>>

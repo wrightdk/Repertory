@@ -7,6 +7,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.wrightdk.repertory.AppContainer
 import io.github.wrightdk.repertory.data.DetailsSyncState
+import io.github.wrightdk.repertory.data.FilmCategory
+import io.github.wrightdk.repertory.data.overrideFor
+import io.github.wrightdk.repertory.data.with
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.ImageConfig
@@ -98,9 +101,11 @@ class FilmographyViewModel(
     private val imageConfig: suspend () -> ImageConfig,
     private val setSeen: suspend (mediaType: MediaType, filmId: Int, seenOn: LocalDate?, seen: Boolean) -> Unit,
     private val touchList: suspend (trackedPersonId: Long) -> Unit,
+    /** Saves the list's own filters, or null to follow the defaults. */
+    private val setFilterOverride: suspend (trackedPersonId: Long, filters: FilmographyFilters?) -> Unit,
+    /** Global defaults from Settings. */
+    private val defaultFilters: StateFlow<FilmographyFilters>,
     private val today: () -> LocalDate = LocalDate::now,
-    /** Global defaults from Settings, once that screen exists. */
-    private val defaultFilters: FilmographyFilters = FilmographyFilters.DEFAULTS,
 ) : ViewModel() {
 
     private sealed interface Load {
@@ -133,11 +138,11 @@ class FilmographyViewModel(
             }
             combine(
                 combine(person(tp.personId), filmography(tp.personId, tp.department), ::Pair),
-                viewingsByFilm,
+                combine(viewingsByFilm, defaultFilters, ::Pair),
                 images,
                 load,
                 details,
-            ) { (p, credits), seen, config, l, d -> state(tp, p, credits, seen, config, l, d) }
+            ) { (p, credits), (seen, defaults), config, l, d -> state(tp, p, credits, seen, defaults, config, l, d) }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FilmographyUiState())
 
@@ -175,6 +180,19 @@ class FilmographyViewModel(
         }
     }
 
+    /** Shows or hides [category] in this list only, from the "Show in this list" sheet. */
+    fun setShown(category: FilmCategory, show: Boolean) {
+        val tp = tracked.value ?: return
+        val defaults = defaultFilters.value
+        val next = tp.filters(defaults).with(category, show)
+        viewModelScope.launch { setFilterOverride(trackedPersonId, overrideFor(next, defaults)) }
+    }
+
+    /** Drops this list's own filters so it follows the defaults from Settings again. */
+    fun useDefaults() {
+        viewModelScope.launch { setFilterOverride(trackedPersonId, null) }
+    }
+
     private fun reload() {
         load.value = Load.Loading
         viewModelScope.launch {
@@ -194,6 +212,7 @@ class FilmographyViewModel(
         p: Person?,
         credits: List<FilmCredit>,
         seen: Map<Pair<MediaType, Int>, Viewing>,
+        defaults: FilmographyFilters,
         config: ImageConfig,
         l: Load,
         details: DetailsStatus,
@@ -204,8 +223,9 @@ class FilmographyViewModel(
             credits.isNotEmpty() || l == Load.Done -> FilmographyBody.Loaded(
                 filmographyContent(
                     credits = credits,
+                    personName = p?.name,
                     viewings = seen,
-                    filters = tp.filters(defaultFilters),
+                    filters = tp.filters(defaults),
                     custom = tp.filterOverride != null,
                     today = today(),
                     images = config,
@@ -248,6 +268,8 @@ class FilmographyViewModel(
                         if (seen) viewingDao.upsert(Viewing(type, id, date)) else viewingDao.delete(type, id)
                     },
                     touchList = { db.trackedPersonDao().touch(it, System.currentTimeMillis()) },
+                    setFilterOverride = db.trackedPersonDao()::setFilterOverride,
+                    defaultFilters = container.settings.filterDefaults,
                 )
             }
         }

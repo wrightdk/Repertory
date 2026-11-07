@@ -1,5 +1,6 @@
 package io.github.wrightdk.repertory.ui.screens
 
+import io.github.wrightdk.repertory.data.FilmCategory
 import io.github.wrightdk.repertory.data.local.dao.CreditInfo
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.Film
@@ -51,8 +52,10 @@ class FilmographyModelTest {
         seen: List<Viewing> = emptyList(),
         filters: FilmographyFilters = FilmographyFilters.DEFAULTS,
         custom: Boolean = false,
+        personName: String? = "Michael Caine",
     ) = filmographyContent(
         credits = credits,
+        personName = personName,
         viewings = seen.associateBy { it.mediaType to it.filmId },
         filters = filters,
         custom = custom,
@@ -162,5 +165,32 @@ class FilmographyModelTest {
         assertEquals("Director, 1928–1999", filmographyHeader(person(LocalDate.of(1928, 7, 26), LocalDate.of(1999, 3, 7)), "Directing", images, 185).subtitle)
         assertEquals("Actor, born 1933", filmographyHeader(person(LocalDate.of(1933, 3, 14), null), "Acting", images, 185).subtitle)
         assertEquals("Writer", filmographyHeader(person(null, null), "Writing", images, 185).subtitle)
+    }
+
+    @Test fun `sheet counts cover every film in a category, shown or not`() {
+        val short = film(14, "Short", LocalDate.of(1951, 1, 1), 16)
+        val shortDoc = film(15, "Short doc", LocalDate.of(1953, 1, 1), 30, documentary = true)
+        val c = content(listOf(crew(short), crew(shortDoc), crew(nights), crew(narnia)))
+        assertEquals(2, c.categoryCounts[FilmCategory.SHORT])
+        assertEquals(1, c.categoryCounts[FilmCategory.DOCUMENTARY])
+        assertEquals(0, c.categoryCounts[FilmCategory.TV])
+        // Both shorts hidden; the unreleased film is listed but doesn't count.
+        assertEquals(listOf("Nights and Weekends", "Narnia: The Magician's Nephew"), c.rows.map { it.title })
+        assertEquals(1, c.total)
+        assertEquals(FilmographyFilters.DEFAULTS, c.filters)
+    }
+
+    @Test fun `a TV documentary is hidden by TV even though documentaries show`() {
+        val tvDoc = film(16, "TV doc", LocalDate.of(1999, 1, 1), type = MediaType.TV, documentary = true)
+        val c = content(listOf(crew(tvDoc), crew(nights)))
+        assertEquals(listOf("Nights and Weekends"), c.rows.map { it.title })
+        assertEquals(listOf(FilmCategory.TV), c.filterSummary.hiding)
+    }
+
+    @Test fun `playing a character under their own name counts as self`() {
+        val simon = film(17, "Simon Simon", LocalDate.of(1970, 1, 1), 30)
+        val row = content(listOf(cast(simon, "Michael Caine", order = 9)), filters = FilmographyFilters(true, true, true, true, true))
+            .rows.single()
+        assertEquals(listOf(FilmCategory.SHORT, FilmCategory.SELF), row.categories)
     }
 }

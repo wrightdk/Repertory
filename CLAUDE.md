@@ -88,7 +88,7 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - Person header: photo, name, life dates ("1928–1999" or "b. 1983").
    - "Track as" with "Each role is its own list with its own progress." Then one checkbox row per department from their credits, with a credit count ("12 credits as Writer"). The known-for department is pre-ticked unless already tracked.
    - Roles already on the list show a bookmark icon and "Already on your list" in place of a checkbox.
-   - Credit counts must match what the list will show by default. For now they only leave out appearances as self, and a department whose count drops to zero isn't offered. **Once the global filter defaults exist (Filters, set in Settings), these counts must apply them** (`CreditDao.departments`).
+   - Credit counts match what the list will show by default: they apply the global filter defaults from Settings (see Filter rules for the one gap, shorts), and a department whose count drops to zero isn't offered (`TmdbRepository.roles`).
    - Bottom button: "Add 1 list" / "Add N lists", or a disabled "Choose a role" when nothing is ticked. Adding returns home with a snackbar ("Added Stanley Kubrick as Writer").
 4. **Filmography** (one list)
    - Header: back, "On your list" button (opens the remove dialog), photo, name, role and life dates ("Director, 1928–1999", "Actor, born 1933").
@@ -102,7 +102,8 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - The count must be final when first shown. Adding a list fetches every film's details (runtime, status) in the background (`FilmDetailsSync`: rate-limited, retried, resumed at app start for lists that never finished). Until they're all in, the count, tally and filter line show a loading state; if the fetch stops, an error with "Try again".
 5. **Remove from your list**: dialog "Remove Michael Caine as Actor from your list?" with Cancel / Remove, then home with a snackbar ("Removed Michael Caine as Actor"). The mockup's body copy says ticked films "will be lost"; that's wrong. The copy should say ticked films stay saved (see Core concepts).
 6. **Filters**
-   - Categories: Shorts (under 40 minutes), TV (series, TV films and specials), Documentaries (non-fiction features), Appearances as self (interviews, making-ofs, talk shows), Minor roles (small or uncredited parts). Each switch means "show".
+   - Categories: Shorts (40 minutes or less), TV (series, TV films and specials), Documentaries (non-fiction features), Appearances as self (interviews, making-ofs, talk shows), Minor roles (small or uncredited parts). Each switch means "show".
+   - Rules are in "Filter rules" below.
    - Global defaults live in Settings. Out of the box everything is hidden except Documentaries.
    - Per-list overrides in a "Show in this list" bottom sheet: "Changes apply to this list only. Hidden films don't count towards your progress." Each switch shows a count ("3 in this list" / "None in this list"). "Use defaults" (shown only when the list is customised) and "Done". An override that ends up matching the defaults goes back to following them.
 7. **Film detail**
@@ -116,6 +117,27 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - "Use your own TMDB API key" item (not in the design; see TMDB section). Style it like the other rows.
    - About row.
 9. **About**: app icon and name, version, "A notebook for working through filmographies. No accounts, no ads, no tracking. Your list stays on this phone.", Licence (GNU General Public License v3.0), Source code link, and a "Film data" section with the TMDB logo and attribution line.
+
+## Filter rules (agreed)
+
+All in one place in code (`data/FilmFilters.kt`) and used everywhere a count or list is built.
+
+- **Per film, per list.** A film's categories come from the film plus this person's credits on it in the list's department. A film can be in several categories, and it's hidden if **any** of its categories is switched off. So with the defaults a TV documentary is hidden (TV off) even though Documentaries is on.
+- **Hidden means gone:** out of the rows, the ledger, "X of Y" and the percentage. Canceled films never appear. Unreleased films appear but never count.
+- **Shorts:** TMDB runtime of 40 minutes or less (the Academy's definition). Unknown runtime (no details yet, or TMDB sends 0/none) is not a short: when in doubt, show.
+- **TV:** a TV series credit (including miniseries and talk shows), or a movie with TMDB's "TV Movie" genre (10770). TMDB has no "special" type; specials are usually tagged TV Movie, and untagged ones show as films.
+- **Documentaries:** TMDB's "Documentary" genre (99).
+- **Appearances as self (acting lists only):** a cast credit whose character starts with Self / Himself / Herself / Themselves / Themself, with any suffix ("Self - Host", "Self (archive footage)", "Self / Professor Brand"), or whose character is the person's own name (ignoring a trailing parenthetical). The film counts as self only if **every** credit of theirs on it is self. Never applies to crew.
+- **Minor roles (acting lists only):** a non-self cast credit that is any of:
+  1. uncredited: character contains "(uncredited)", whatever the billing;
+  2. archive footage only: character contains "(archive footage)";
+  3. billed deep: TMDB cast order of 20 or more (21st billed or lower).
+  Voice roles aren't minor in themselves; they go through the same checks. No order or a blank character isn't minor unless 1 or 2 applies. The film counts as minor only if **every** credit of theirs on it is minor. Never applies to crew.
+  The cutoff of 20 was checked against Caine, Oldman and Damon: 15 would hide real supporting parts (Sirius Black at 16 and 19), 20 still catches cameos (Truman in *Oppenheimer* at 77).
+- **Sheet counts** ("3 in this list") are every film in the list in that category, shown or not, unreleased included, canceled not. A film in several categories counts under each.
+- **Summary line** names only hidden categories that have films in this list; with none, "Showing everything". "Custom list: " prefix when the list has an override.
+- **Overrides** store all five switches. One that ends up equal to the defaults is cleared. Changing the defaults later doesn't touch lists with an override.
+- **Add to your list counts** apply the global defaults. Runtimes aren't known until a list is added, so shorts are only left out for films whose details are already cached; the count can drop a little once the list loads. Accepted rather than fetching every film's details up front.
 
 ## v1.1 (after v1 ships)
 
@@ -166,5 +188,4 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
 ## Open questions
 
 - Final app name (Repertory is the working name)
-- What counts as a "minor role" for actors (cast order cutoff? exclude voice-only?). Which categories are hidden by default is decided (see Filters).
 - Own name or pseudonym as developer

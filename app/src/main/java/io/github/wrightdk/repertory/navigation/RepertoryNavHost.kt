@@ -11,6 +11,7 @@ import io.github.wrightdk.repertory.ui.screens.FilmDetailScreen
 import io.github.wrightdk.repertory.ui.screens.FilmographyScreen
 import io.github.wrightdk.repertory.ui.screens.HomeScreen
 import io.github.wrightdk.repertory.ui.screens.SearchScreen
+import io.github.wrightdk.repertory.ui.screens.SettingsScreen
 
 // Placeholder ID so Home can open a filmography before the real list exists.
 private const val SAMPLE_TRACKED_PERSON_ID = 1L
@@ -25,7 +26,7 @@ fun RepertoryNavHost() {
             HomeScreen(
                 onSearch = { navController.navigate(SearchRoute) },
                 onOpenFilmography = { navController.navigate(FilmographyRoute(SAMPLE_TRACKED_PERSON_ID)) },
-                onAbout = { navController.navigate(AboutRoute) },
+                onSettings = { navController.navigate(SettingsRoute) },
             )
         }
         composable<SearchRoute> {
@@ -59,6 +60,9 @@ fun RepertoryNavHost() {
         composable<FilmDetailRoute> { entry ->
             val route = entry.toRoute<FilmDetailRoute>()
             FilmDetailScreen(filmId = route.filmId, onBack = back)
+        }
+        composable<SettingsRoute> {
+            SettingsScreen(onBack = back, onAbout = { navController.navigate(AboutRoute) })
         }
         composable<AboutRoute> {
             AboutScreen(onBack = back)

@@ -200,7 +200,8 @@ class AddPersonViewModel(
                     personId = personId,
                     refreshPerson = { repo.refreshPerson(it) },
                     person = repo.observePerson(personId),
-                    roles = repo::roles,
+                    // Counts match what each list will show under the defaults from Settings.
+                    roles = { repo.roles(it, container.settings.filterDefaults.value) },
                     trackedDepartments = trackedDao.observeDepartments(personId),
                     imageConfig = repo::imageConfig,
                     track = { id, departments ->

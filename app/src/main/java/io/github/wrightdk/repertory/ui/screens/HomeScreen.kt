@@ -37,7 +37,7 @@ import io.github.wrightdk.repertory.ui.theme.spacing
 fun HomeScreen(
     onSearch: () -> Unit,
     onOpenFilmography: () -> Unit,
-    onAbout: () -> Unit,
+    onSettings: () -> Unit,
 ) {
     // Skeleton check that the Room database opens through the manual wiring.
     val context = LocalContext.current
@@ -52,8 +52,7 @@ fun HomeScreen(
                 title = { Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleSmall) },
                 onBack = null,
                 actions = {
-                    // Settings isn't built yet; About is reached through it in the design.
-                    IconButton(onClick = onAbout) {
+                    IconButton(onClick = onSettings) {
                         Icon(painterResource(R.drawable.ic_settings), stringResource(R.string.settings))
                     }
                 },

@@ -3,6 +3,7 @@ package io.github.wrightdk.repertory
 import android.content.Context
 import android.util.Log
 import io.github.wrightdk.repertory.data.FilmDetailsSync
+import io.github.wrightdk.repertory.data.SettingsStore
 import io.github.wrightdk.repertory.data.TmdbRepository
 import io.github.wrightdk.repertory.data.local.RepertoryDatabase
 import io.github.wrightdk.repertory.data.remote.ApiKeyProvider
@@ -21,6 +22,11 @@ class AppContainer(context: Context) {
     private val appContext = context.applicationContext
 
     val database: RepertoryDatabase by lazy { RepertoryDatabase.build(appContext) }
+
+    /** Read on the main thread at startup for the theme; a tiny prefs file, so that's fine. */
+    val settings: SettingsStore by lazy {
+        SettingsStore(appContext.getSharedPreferences(SettingsStore.PREFS_NAME, Context.MODE_PRIVATE))
+    }
 
     // The Settings "use my own TMDB API key" override plugs in here once it exists;
     // the provider is read per request, so no client rebuild is needed.

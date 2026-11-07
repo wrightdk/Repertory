@@ -1,6 +1,11 @@
 package io.github.wrightdk.repertory.ui.screens
 
+import io.github.wrightdk.repertory.data.FilmCategory
+import io.github.wrightdk.repertory.data.displayCharacter
+import io.github.wrightdk.repertory.data.filmCategories
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
+import io.github.wrightdk.repertory.data.showsAll
+import io.github.wrightdk.repertory.data.shows
 import io.github.wrightdk.repertory.data.local.entity.Film
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.ImageConfig
@@ -12,9 +17,6 @@ import java.time.LocalDate
 
 // Turns cached credits, viewings and filters into what the Filmography screen
 // shows. Pure functions, so the counting rules can be tested without Room.
-
-/** The kinds of film a list can hide, in the order the filter sheet lists them. */
-enum class FilmCategory { SHORT, TV, DOCUMENTARY, SELF, MINOR_ROLE }
 
 data class FilmographyHeader(
     val name: String,
@@ -79,6 +81,13 @@ data class FilmographyContent(
     /** One cell per film shown, in list order, unreleased ones included. */
     val ledger: List<LedgerCell>,
     val filterSummary: FilterSummary,
+    /** The filters in force: the list's own, or the defaults. */
+    val filters: FilmographyFilters,
+    /**
+     * For the "Show in this list" sheet: how many films in the list fall into
+     * each category, shown or not (unreleased included, canceled not).
+     */
+    val categoryCounts: Map<FilmCategory, Int>,
     val items: List<FilmographyItem>,
 ) {
     /** Rounded percentage, or null when there's nothing to count. */
@@ -104,10 +113,12 @@ internal fun lifeSpan(birthday: LocalDate?, deathday: LocalDate?): String? = whe
  * Builds the list from [credits] (chronological, one row per credit, as
  * [io.github.wrightdk.repertory.data.local.dao.FilmDao.observeFilmography]
  * returns them). Canceled films are left out entirely; films [filters] hide
- * are left out of the rows, the ledger and the count.
+ * are left out of the rows, the ledger and the count. [personName] is for
+ * spotting appearances as self credited under their own name.
  */
 internal fun filmographyContent(
     credits: List<FilmCredit>,
+    personName: String?,
     viewings: Map<Pair<MediaType, Int>, Viewing>,
     filters: FilmographyFilters,
     custom: Boolean,
@@ -118,10 +129,10 @@ internal fun filmographyContent(
     val films = credits
         .groupBy { it.film.mediaType to it.film.tmdbId }
         .values
-        .map { group -> toRow(group, viewings, today, images, posterMinWidthPx) }
+        .map { group -> toRow(group, personName, viewings, today, images, posterMinWidthPx) }
         .filterNot { (film, _) -> film.isCanceled }
 
-    val shown = films.filter { (_, row) -> row.categories.all { filters.shows(it) } }.map { it.second }
+    val shown = films.filter { (_, row) -> filters.showsAll(row.categories) }.map { it.second }
 
     val hiding = FilmCategory.entries.filter { category ->
         !filters.shows(category) && films.any { (_, row) -> category in row.categories }
@@ -151,12 +162,17 @@ internal fun filmographyContent(
             }
         },
         filterSummary = FilterSummary(hiding, custom),
+        filters = filters,
+        categoryCounts = FilmCategory.entries.associateWith { category ->
+            films.count { (_, row) -> category in row.categories }
+        },
         items = items,
     )
 }
 
 private fun toRow(
     group: List<FilmCredit>,
+    personName: String?,
     viewings: Map<Pair<MediaType, Int>, Viewing>,
     today: LocalDate,
     images: ImageConfig,
@@ -166,14 +182,8 @@ private fun toRow(
     val released = film.isReleased(today)
     val viewing = viewings[film.mediaType to film.tmdbId]
     val characters = group.mapNotNull { displayCharacter(it.credit.character) }.distinct()
-    val isActing = group.any { it.credit.character != null || it.credit.order != null }
-    val categories = buildList {
-        if (film.isShort) add(FilmCategory.SHORT)
-        if (film.isTv) add(FilmCategory.TV)
-        if (film.isDocumentary) add(FilmCategory.DOCUMENTARY)
-        if (group.all { it.credit.isSelf }) add(FilmCategory.SELF)
-        if (isActing && group.all { isMinorRole(it.credit.character) }) add(FilmCategory.MINOR_ROLE)
-    }
+    // Enum order, so the meta line prefix is stable ("Short", "Documentary").
+    val categories = filmCategories(film, group.map { it.credit }, personName).sorted()
     return film to FilmRow(
         mediaType = film.mediaType,
         tmdbId = film.tmdbId,
@@ -189,24 +199,3 @@ private fun toRow(
         dueDate = film.releaseDate.takeIf { !released },
     )
 }
-
-internal fun FilmographyFilters.shows(category: FilmCategory): Boolean = when (category) {
-    FilmCategory.SHORT -> showShorts
-    FilmCategory.TV -> showTv
-    FilmCategory.DOCUMENTARY -> showDocumentaries
-    FilmCategory.SELF -> showSelf
-    FilmCategory.MINOR_ROLE -> showMinorRoles
-}
-
-private val UNCREDITED = Regex("""\s*\(uncredited\)""", RegexOption.IGNORE_CASE)
-
-/**
- * A minor role, for now, is an uncredited part: TMDB marks those in the character
- * name ("Nun (uncredited)"). Whether a cast-order cutoff should count too is
- * still an open question (see CLAUDE.md).
- */
-internal fun isMinorRole(character: String?): Boolean = character != null && UNCREDITED.containsMatchIn(character)
-
-/** The character name to show after "as": without TMDB's "(uncredited)" marker, null when blank. */
-internal fun displayCharacter(character: String?): String? =
-    character?.replace(UNCREDITED, "")?.trim()?.takeIf { it.isNotEmpty() }

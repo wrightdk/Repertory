@@ -121,16 +121,24 @@ class TmdbRepositoryTest {
         )
     }
 
-    @Test fun `departments are counted by distinct film, without appearances as self`() = runTest {
+    @Test fun `departments are counted by distinct film under the default filters`() = runTest {
         routeVarda()
         repo.refreshPerson(VARDA)
 
         val departments = repo.departments(VARDA).associate { it.department to it.filmCount }
 
-        // Acting has 4 credits, 2 of them as Self.
+        // Directing has 6 titles, one a TV film and one a series. Acting has 4
+        // credits: 2 as Self and 1 uncredited (a minor role).
         assertEquals(
-            mapOf("Directing" to 6, "Acting" to 2, "Writing" to 2, "Editing" to 1, "Sound" to 1),
+            mapOf("Directing" to 4, "Acting" to 1, "Writing" to 2, "Editing" to 1, "Sound" to 1),
             departments,
+        )
+
+        val everything = repo.departments(VARDA, FilmographyFilters(true, true, true, true, true))
+            .associate { it.department to it.filmCount }
+        assertEquals(
+            mapOf("Directing" to 6, "Acting" to 4, "Writing" to 2, "Editing" to 1, "Sound" to 1),
+            everything,
         )
     }
 

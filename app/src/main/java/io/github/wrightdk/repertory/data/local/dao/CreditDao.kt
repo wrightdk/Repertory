@@ -1,10 +1,12 @@
 package io.github.wrightdk.repertory.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import io.github.wrightdk.repertory.data.local.entity.Credit
+import io.github.wrightdk.repertory.data.local.entity.Film
 
 @Dao
 interface CreditDao {
@@ -15,21 +17,18 @@ interface CreditDao {
     suspend fun deleteForPerson(personId: Int)
 
     /**
-     * The departments [personId] has credits in, with how many distinct titles each
-     * (a movie and a series can share a TMDB id, so both columns identify a title). Most first.
-     *
-     * Counts aim to match what a list shows by default, so appearances as self
-     * are left out, and a department with nothing else isn't returned at all.
-     * Once the global filter defaults exist, this should apply them instead.
+     * Every credit [personId] has, with its department and film, for counting
+     * what each department's list would show (see `TmdbRepository.roles`).
      */
     @Query(
         """
-        SELECT department, COUNT(DISTINCT mediaType || ':' || filmId) AS filmCount FROM credit
-        WHERE personId = :personId AND NOT isSelf
-        GROUP BY department ORDER BY filmCount DESC, department
+        SELECT credit.department AS department, film.*, credit.job AS credit_job,
+            credit.character AS credit_character, credit.`order` AS credit_order, credit.isSelf AS credit_isSelf
+        FROM credit JOIN film ON film.mediaType = credit.mediaType AND film.tmdbId = credit.filmId
+        WHERE credit.personId = :personId
         """
     )
-    suspend fun departments(personId: Int): List<DepartmentCount>
+    suspend fun creditsWithFilms(personId: Int): List<DepartmentFilmCredit>
 
     /** Crew jobs [personId] has, with how many credits each, most used first within each department. */
     @Query(
@@ -50,5 +49,12 @@ interface CreditDao {
 }
 
 data class DepartmentCount(val department: String, val filmCount: Int)
+
+/** One of a person's credits with its department and film. */
+data class DepartmentFilmCredit(
+    val department: String,
+    @Embedded val film: Film,
+    @Embedded(prefix = "credit_") val credit: CreditInfo,
+)
 
 data class JobCount(val department: String, val job: String, val creditCount: Int)

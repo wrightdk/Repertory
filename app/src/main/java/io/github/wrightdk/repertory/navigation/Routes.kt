@@ -20,3 +20,6 @@ data class FilmDetailRoute(val filmId: Int)
 
 @Serializable
 data object AboutRoute
+
+@Serializable
+data object SettingsRoute

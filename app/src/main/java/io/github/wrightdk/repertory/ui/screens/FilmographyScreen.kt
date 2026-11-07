@@ -35,11 +35,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -54,6 +60,7 @@ import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.wrightdk.repertory.R
 import io.github.wrightdk.repertory.appContainer
+import io.github.wrightdk.repertory.data.FilmCategory
 import io.github.wrightdk.repertory.data.remote.TmdbError
 import io.github.wrightdk.repertory.ui.components.FilmPoster
 import io.github.wrightdk.repertory.ui.components.PersonPhoto
@@ -79,15 +86,17 @@ fun FilmographyScreen(
         factory = FilmographyViewModel.factory(context.appContainer, trackedPersonId),
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val resources = LocalResources.current
     val snackbar = remember { SnackbarHostState() }
+    var filterSheetOpen by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(viewModel) {
         // collectLatest: a new tick replaces the snackbar showing, rather than queueing behind it.
         viewModel.tickedOff.collectLatest { t ->
             val message = when {
                 // Count not final yet: say what was ticked, not a number that may change.
-                t.seen == null || t.total == null -> context.getString(R.string.ticked_off_no_count, t.title)
-                t.seen == t.total -> context.getString(R.string.ticked_off_all, t.title, t.total)
-                else -> context.getString(R.string.ticked_off, t.title, t.seen, t.total)
+                t.seen == null || t.total == null -> resources.getString(R.string.ticked_off_no_count, t.title)
+                t.seen == t.total -> resources.getString(R.string.ticked_off_all, t.title, t.total)
+                else -> resources.getString(R.string.ticked_off, t.title, t.seen, t.total)
             }
             snackbar.showSnackbar(message)
         }
@@ -109,10 +118,21 @@ fun FilmographyScreen(
             state = state,
             contentPadding = innerPadding,
             onRetryDetails = viewModel::retryDetails,
+            onOpenFilters = { filterSheetOpen = true },
             onToggleSeen = viewModel::toggleSeen,
             onOpen = { onFilmSelected(it.tmdbId) },
             onRetry = viewModel::retry,
             modifier = Modifier.consumeWindowInsets(innerPadding),
+        )
+    }
+
+    val loaded = state.body as? FilmographyBody.Loaded
+    if (filterSheetOpen && loaded != null) {
+        FilterSheet(
+            content = loaded.content,
+            onSetShown = viewModel::setShown,
+            onUseDefaults = viewModel::useDefaults,
+            onDismiss = { filterSheetOpen = false },
         )
     }
 }
@@ -122,6 +142,7 @@ private fun FilmographyList(
     state: FilmographyUiState,
     contentPadding: PaddingValues,
     onRetryDetails: () -> Unit,
+    onOpenFilters: () -> Unit,
     onToggleSeen: (FilmRow) -> Unit,
     onOpen: (FilmRow) -> Unit,
     onRetry: () -> Unit,
@@ -146,7 +167,7 @@ private fun FilmographyList(
             }
             is FilmographyBody.Loaded -> {
                 val content = body.content
-                item(key = "progress") { Progress(content, body.details, onRetryDetails) }
+                item(key = "progress") { Progress(content, body.details, onRetryDetails, onOpenFilters) }
                 if (content.items.isEmpty()) {
                     item(key = "empty") {
                         Message(
@@ -240,7 +261,12 @@ private fun Header(header: FilmographyHeader?) {
  * status line takes the filter summary's place: none of them would be final.
  */
 @Composable
-private fun Progress(content: FilmographyContent, details: DetailsStatus, onRetryDetails: () -> Unit) {
+private fun Progress(
+    content: FilmographyContent,
+    details: DetailsStatus,
+    onRetryDetails: () -> Unit,
+    onOpenFilters: () -> Unit,
+) {
     Column(Modifier.padding(horizontal = MaterialTheme.spacing.gutter)) {
         HorizontalDivider(color = MaterialTheme.colorScheme.onSurface)
         Column(
@@ -250,7 +276,7 @@ private fun Progress(content: FilmographyContent, details: DetailsStatus, onRetr
             if (details == DetailsStatus.Complete) {
                 Count(content)
                 Ledger(content.ledger)
-                FilterSummaryLine(content.filterSummary)
+                FilterSummaryLine(content.filterSummary, onOpenFilters)
             } else {
                 CountSkeleton(pulsing = details == DetailsStatus.Loading)
                 DetailsStatusLine(details, onRetryDetails)
@@ -375,9 +401,9 @@ private fun Ledger(cells: List<LedgerCell>) {
     }
 }
 
-/** "Hiding shorts", "Custom list: showing everything". Will open the filter sheet. */
+/** "Hiding shorts", "Custom list: showing everything". Opens the "Show in this list" sheet. */
 @Composable
-private fun FilterSummaryLine(summary: FilterSummary) {
+private fun FilterSummaryLine(summary: FilterSummary, onClick: () -> Unit) {
     val hiding = summary.hiding.map { stringResource(it.hiddenLabel) }
     val list = joinWithAnd(hiding)
     val text = when {
@@ -386,8 +412,13 @@ private fun FilterSummaryLine(summary: FilterSummary) {
         list != null -> stringResource(R.string.filter_hiding, list)
         else -> stringResource(R.string.filter_showing_everything)
     }
+    val action = stringResource(R.string.filter_summary_action)
     Row(
-        modifier = Modifier.padding(vertical = MaterialTheme.spacing.xs),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .clickable(onClickLabel = action, role = Role.Button, onClick = onClick)
+            .padding(vertical = MaterialTheme.spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {

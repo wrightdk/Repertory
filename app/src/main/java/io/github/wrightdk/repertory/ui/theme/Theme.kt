@@ -95,7 +95,7 @@ private val DarkColors = darkColorScheme(
 
 /**
  * The app theme. No dynamic colour: the warm paper palette is the identity.
- * A Light / Dark / System choice will come with the Settings screen.
+ * Light / Dark / System is chosen in Settings; MainActivity passes [darkTheme].
  */
 @Composable
 fun RepertoryTheme(

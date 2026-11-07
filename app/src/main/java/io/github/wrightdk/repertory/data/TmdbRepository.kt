@@ -5,6 +5,7 @@ import io.github.wrightdk.repertory.data.local.RepertoryDatabase
 import io.github.wrightdk.repertory.data.local.dao.DepartmentCount
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.Film
+import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.ImageConfig
 import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.Person
@@ -128,20 +129,40 @@ class TmdbRepository(
     fun observeFilmography(personId: Int, department: String): Flow<List<FilmCredit>> =
         filmDao.observeFilmography(personId, department)
 
-    /** Departments with cached credits for [personId]; empty until [refreshPerson] has succeeded. */
-    suspend fun departments(personId: Int): List<DepartmentCount> = creditDao.departments(personId)
+    /**
+     * Departments with cached credits for [personId], each with how many titles
+     * its list would show under [filters] (canceled films never count). Most
+     * first; departments that would show nothing are left out. Empty until
+     * [refreshPerson] has succeeded.
+     *
+     * Runtimes aren't known until a list's film details are fetched, so shorts
+     * are only left out where those details are already cached.
+     */
+    suspend fun departments(personId: Int, filters: FilmographyFilters = FilmographyFilters.DEFAULTS): List<DepartmentCount> {
+        val name = personDao.get(personId)?.name
+        return creditDao.creditsWithFilms(personId)
+            .filterNot { it.film.isCanceled }
+            .groupBy { it.department }
+            .map { (department, credits) ->
+                val shown = credits.groupBy { it.film.mediaType to it.film.tmdbId }.values.count { film ->
+                    filters.showsAll(filmCategories(film.first().film, film.map { it.credit }, name))
+                }
+                DepartmentCount(department, shown)
+            }
+            .filter { it.filmCount > 0 }
+            .sortedWith(compareByDescending<DepartmentCount> { it.filmCount }.thenBy { it.department })
+    }
 
     /**
-     * The roles [personId] could be tracked in: each department with cached credits,
-     * its title count and the job they most often had in it. Most titles first.
-     * Appearances as self don't count, and departments with nothing else are
-     * left out. Empty until [refreshPerson] has succeeded.
+     * The roles [personId] could be tracked in: each department from
+     * [departments] under [filters] (the defaults from Settings), its title
+     * count and the job they most often had in it. Most titles first.
      */
-    suspend fun roles(personId: Int): List<RoleSummary> {
+    suspend fun roles(personId: Int, filters: FilmographyFilters = FilmographyFilters.DEFAULTS): List<RoleSummary> {
         val topJobs = creditDao.jobCounts(personId)
             .groupBy { it.department }
             .mapValues { (_, jobs) -> jobs.first().job }
-        return creditDao.departments(personId).map { d ->
+        return departments(personId, filters).map { d ->
             RoleSummary(d.department, d.filmCount, topJobs[d.department])
         }
     }
