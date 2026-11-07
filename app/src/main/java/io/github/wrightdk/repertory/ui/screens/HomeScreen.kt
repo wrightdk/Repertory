@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,8 +45,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -253,6 +258,21 @@ private fun YourList(
     val spacing = MaterialTheme.spacing
     val today = remember { LocalDate.now() }
     val zone = remember { ZoneId.systemDefault() }
+    val listState = rememberLazyListState()
+    // A new sort or search goes back to the top. Rows are keyed, so otherwise the list
+    // would follow whichever row was on top to its new place, often near the bottom.
+    // Only the order and search count: a tick, a background refresh or rotation keeps
+    // the scroll position. Saved, so returning to Home doesn't count as a change.
+    val order = "${sort.name}\u0000${content.query}"
+    var shownOrder by rememberSaveable { mutableStateOf(order) }
+    SideEffect {
+        if (shownOrder != order) {
+            shownOrder = order
+            // Applied on the next layout pass, the one that lays out the new order, by index
+            // rather than by the old top row's key, so there's no frame at the wrong place.
+            listState.requestScrollToItem(0)
+        }
+    }
     Column(Modifier.fillMaxSize()) {
         Text(
             stringResource(R.string.your_list),
@@ -271,6 +291,7 @@ private fun YourList(
                 .padding(horizontal = spacing.gutter),
         )
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             // Room under the last row for the "Add person" button.
             contentPadding = PaddingValues(top = spacing.lg - ChipTouchOverhang, bottom = bottomPadding + 100.dp),

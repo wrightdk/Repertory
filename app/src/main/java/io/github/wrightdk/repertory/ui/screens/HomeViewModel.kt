@@ -39,8 +39,12 @@ sealed interface HomeContent {
     /** Nobody on the list: the first-launch screen, with a random handful of [suggestions]. */
     data class Empty(val suggestions: List<Suggestion>) : HomeContent
 
-    /** [rows] sorted, and narrowed by the list search when it's open. [total] is before the search. */
-    data class Lists(val rows: List<HomeRow>, val total: Int) : HomeContent
+    /**
+     * [rows] sorted, and narrowed by the list search when it's open. [total] is before the search.
+     * [query] is the search text these rows were narrowed by ("" when the search is closed), kept
+     * with them so Home can tell a new order or search from a data update.
+     */
+    data class Lists(val rows: List<HomeRow>, val total: Int, val query: String = "") : HomeContent
 }
 
 data class HomeUiState(
@@ -127,7 +131,7 @@ class HomeViewModel(
         val content = if (all.isEmpty()) {
             HomeContent.Empty(picks)
         } else {
-            HomeContent.Lists(searchRows(sortRows(all, s), query.orEmpty()), total = all.size)
+            HomeContent.Lists(searchRows(sortRows(all, s), query.orEmpty()), total = all.size, query = query.orEmpty())
         }
         HomeUiState(s, content)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
