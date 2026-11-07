@@ -13,7 +13,7 @@ enum class HomeSort { NAME, PROGRESS, RECENT }
 
 /**
  * App-wide preferences: from Settings, the default filters every list follows
- * unless it has its own, the theme and the user's own TMDB API key; from Home,
+ * unless it has its own, the theme, the "Where to watch" country and the user's own TMDB API key; from Home,
  * the chosen sort. Small and read at startup (the theme
  * must be known before the first frame), so plain SharedPreferences rather
  * than Room. One instance, in [io.github.wrightdk.repertory.AppContainer].
@@ -43,6 +43,14 @@ class SettingsStore(
     private val _homeSort = MutableStateFlow(readHomeSort())
     val homeSort: StateFlow<HomeSort> = _homeSort.asStateFlow()
 
+    private val _watchRegion = MutableStateFlow(prefs.getString(KEY_WATCH_REGION, null)?.takeIf(::isRegionCode))
+
+    /**
+     * The country "Where to watch" shows ("GB"), as chosen in Settings; null
+     * until one is chosen, when the phone's region is used ([phoneWatchRegion]).
+     */
+    val watchRegion: StateFlow<String?> = _watchRegion.asStateFlow()
+
     private val _ownTmdbApiKey = MutableStateFlow(keyPrefs.getString(KEY_OWN_TMDB_API_KEY, null)?.takeIf { it.isNotBlank() })
 
     /**
@@ -70,6 +78,13 @@ class SettingsStore(
     fun setHomeSort(sort: HomeSort) {
         prefs.edit().putString(KEY_HOME_SORT, sort.name).apply()
         _homeSort.value = sort
+    }
+
+    /** Saves the "Where to watch" country; null goes back to the phone's region. Anything but a country code is ignored. */
+    fun setWatchRegion(code: String?) {
+        if (code != null && !isRegionCode(code)) return
+        prefs.edit().apply { if (code == null) remove(KEY_WATCH_REGION) else putString(KEY_WATCH_REGION, code) }.apply()
+        _watchRegion.value = code
     }
 
     /** Saves the user's own TMDB key; null or blank goes back to the built-in key. */
@@ -108,6 +123,7 @@ class SettingsStore(
         private const val KEY_MINOR_ROLES = "filter_show_minor_roles"
         private const val KEY_THEME = "theme"
         private const val KEY_HOME_SORT = "home_sort"
+        private const val KEY_WATCH_REGION = "watch_region"
         private const val KEY_OWN_TMDB_API_KEY = "own_tmdb_api_key"
     }
 }

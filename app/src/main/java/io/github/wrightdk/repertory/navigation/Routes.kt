@@ -29,6 +29,10 @@ data object AboutRoute
 @Serializable
 data class LicenceRoute(val kind: String)
 
-/** Settings; with [editApiKey], opens straight onto the own TMDB key dialog (from a key error). */
+/**
+ * Settings; with [editApiKey], opens straight onto the own TMDB key dialog (from
+ * a key error); with [chooseWatchCountry], onto the country picker (from a film's
+ * "Where to watch").
+ */
 @Serializable
-data class SettingsRoute(val editApiKey: Boolean = false)
+data class SettingsRoute(val editApiKey: Boolean = false, val chooseWatchCountry: Boolean = false)

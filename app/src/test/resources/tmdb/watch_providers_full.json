@@ -1,0 +1,35 @@
+{
+  "id": 62,
+  "results": {
+    "GB": {
+      "link": "https://www.themoviedb.org/movie/62-2001-a-space-odyssey/watch?locale=GB",
+      "flatrate": [
+        {"logo_path": "/mubi.jpg", "provider_id": 11, "provider_name": "MUBI", "display_priority": 9}
+      ],
+      "rent": [
+        {"logo_path": "/play.jpg", "provider_id": 3, "provider_name": "Google Play Movies", "display_priority": 14},
+        {"logo_path": "/apple.jpg", "provider_id": 2, "provider_name": "Apple TV", "display_priority": 4},
+        {"logo_path": "/prime.jpg", "provider_id": 10, "provider_name": "Amazon Video", "display_priority": 7}
+      ],
+      "buy": [
+        {"logo_path": "/sky.jpg", "provider_id": 130, "provider_name": "Sky Store", "display_priority": 20},
+        {"logo_path": "/prime.jpg", "provider_id": 10, "provider_name": "Amazon Video", "display_priority": 7},
+        {"logo_path": "/apple.jpg", "provider_id": 2, "provider_name": "Apple TV", "display_priority": 4},
+        {"logo_path": "/play.jpg", "provider_id": 3, "provider_name": "Google Play Movies", "display_priority": 14}
+      ],
+      "ads": [
+        {"logo_path": "/my5.jpg", "provider_id": 333, "provider_name": "My5", "display_priority": 30}
+      ],
+      "free": [
+        {"logo_path": "/bbc.jpg", "provider_id": 38, "provider_name": "BBC iPlayer", "display_priority": 2}
+      ],
+      "some_new_category": []
+    },
+    "US": {
+      "link": "https://www.themoviedb.org/movie/62-2001-a-space-odyssey/watch?locale=US",
+      "flatrate": [
+        {"logo_path": "/max.jpg", "provider_id": 1899, "provider_name": "Max", "display_priority": 1}
+      ]
+    }
+  }
+}

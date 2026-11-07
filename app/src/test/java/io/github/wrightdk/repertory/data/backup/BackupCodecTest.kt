@@ -35,7 +35,7 @@ class BackupCodecTest {
             Viewing(MediaType.MOVIE, 975, null),
             Viewing(MediaType.TV, 1396, LocalDate.of(2020, 1, 2)),
         ),
-        settings = BackupSettings(FilmographyFilters.DEFAULTS.copy(showTv = true), ThemeMode.DARK, HomeSort.RECENT),
+        settings = BackupSettings(FilmographyFilters.DEFAULTS.copy(showTv = true), ThemeMode.DARK, HomeSort.RECENT, watchRegion = "FR"),
     )
 
     private fun decode(text: String) = BackupCodec.decode(text)
@@ -184,6 +184,13 @@ class BackupCodecTest {
         assertEquals(240, b.lists.single().personId)
         assertEquals(62, b.viewings.single().filmId)
         assertEquals(ThemeMode.DARK, b.settings.theme)
+    }
+
+    @Test fun `the where to watch country round-trips, and a malformed one is left out`() {
+        assertEquals("FR", valid(BackupCodec.encode(backup)).settings.watchRegion)
+        assertEquals("GB", valid(file("""{"settings": {"watchRegion": "gb"}}""")).settings.watchRegion)
+        assertNull(valid(file("""{"settings": {"watchRegion": "Britain"}}""")).settings.watchRegion)
+        assertNull(valid(file("""{"settings": {}}""")).settings.watchRegion)
     }
 
     @Test fun `an unknown theme or sort from a newer version is left out, not refused`() {

@@ -164,6 +164,42 @@
     <string name="film_missing_title">This film isn’t saved.</string>
     <string name="film_missing_body">Go back and open it from one of your lists.</string>
 
+    <!-- Film detail: where to watch (JustWatch data via TMDB, one region) -->
+    <string name="where_to_watch">Where to watch</string>
+    <string name="watch_stream">Stream</string>
+    <string name="watch_rent">Rent</string>
+    <string name="watch_buy">Buy</string>
+    <string name="watch_see_all_on_tmdb">See all options on TMDB</string>
+    <string name="watch_none">Not streaming, renting or for sale here right now. Try your local cinema.</string>
+    <string name="watch_choose_country">Choose country</string>
+    <string name="watch_change_country">Change country</string>
+    <string name="watch_no_country">Choose your country to see where you can stream, rent or buy this film.</string>
+    <!-- %1$s is a country name: "France". -->
+    <string name="watch_not_covered">JustWatch has no streaming data for %1$s.</string>
+    <string name="watch_choose_another_country">Choose another country</string>
+    <string name="watch_loading_description">Loading where to watch</string>
+    <string name="watch_error_offline">Couldn’t load. Check your connection.</string>
+    <string name="watch_error_other">Couldn’t load where to watch.</string>
+    <!-- %1$s is "JustWatch" (justwatch), underlined as a link. -->
+    <string name="watch_attribution">Availability data from %1$s, via TMDB.</string>
+    <string name="justwatch">JustWatch</string>
+    <string name="justwatch_logo">JustWatch</string>
+
+    <!-- Where to watch: the country picker (Settings) -->
+    <string name="watch_country_title">Your country</string>
+    <string name="watch_country_body">See what you can stream, rent or buy there. Only countries JustWatch covers are listed.</string>
+    <string name="watch_country_search">Search countries</string>
+    <string name="watch_country_phone">Your phone’s region</string>
+    <string name="watch_country_loading">Loading countries</string>
+    <string name="watch_country_error_offline">Couldn’t load the list of countries. Check your connection.</string>
+    <string name="watch_country_error_other">Couldn’t load the list of countries.</string>
+    <string name="watch_country_no_match">No country called “%1$s”.</string>
+    <string name="settings_where_to_watch">Where to watch</string>
+    <string name="settings_watch_country">Country</string>
+    <!-- %1$s is a country name. Shown until a country is chosen. -->
+    <string name="settings_watch_country_phone">%1$s, from your phone’s settings</string>
+    <string name="settings_watch_country_none">Not chosen</string>
+
     <!-- Filters: labels and descriptions shared by Settings and the per-list sheet -->
     <string name="filter_shorts">Shorts</string>
     <string name="filter_tv">TV</string>

@@ -40,6 +40,8 @@ data class BackupSettings(
     val filterDefaults: FilmographyFilters? = null,
     val theme: ThemeMode? = null,
     val homeSort: HomeSort? = null,
+    /** "Where to watch" country ("GB"); null when the backup follows the phone's region. */
+    val watchRegion: String? = null,
 )
 
 /** How a restore treats what's already on the phone. */

@@ -1,0 +1,478 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 5,
+    "identityHash": "ba1a4e66a83147aa6c3dd7fb3d5771be",
+    "entities": [
+      {
+        "tableName": "person",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tmdbId` INTEGER NOT NULL, `name` TEXT NOT NULL, `profilePath` TEXT, `knownForDepartment` TEXT, `birthday` INTEGER, `deathday` INTEGER, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`tmdbId`))",
+        "fields": [
+          {
+            "fieldPath": "tmdbId",
+            "columnName": "tmdbId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profilePath",
+            "columnName": "profilePath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "knownForDepartment",
+            "columnName": "knownForDepartment",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "birthday",
+            "columnName": "birthday",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "deathday",
+            "columnName": "deathday",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "tmdbId"
+          ]
+        }
+      },
+      {
+        "tableName": "tracked_person",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `personId` INTEGER NOT NULL, `department` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `filter_showShorts` INTEGER, `filter_showTv` INTEGER, `filter_showDocumentaries` INTEGER, `filter_showSelf` INTEGER, `filter_showMinorRoles` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "personId",
+            "columnName": "personId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "department",
+            "columnName": "department",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "addedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filterOverride.showShorts",
+            "columnName": "filter_showShorts",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "filterOverride.showTv",
+            "columnName": "filter_showTv",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "filterOverride.showDocumentaries",
+            "columnName": "filter_showDocumentaries",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "filterOverride.showSelf",
+            "columnName": "filter_showSelf",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "filterOverride.showMinorRoles",
+            "columnName": "filter_showMinorRoles",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_tracked_person_personId_department",
+            "unique": true,
+            "columnNames": [
+              "personId",
+              "department"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_tracked_person_personId_department` ON `${TABLE_NAME}` (`personId`, `department`)"
+          }
+        ]
+      },
+      {
+        "tableName": "film",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mediaType` TEXT NOT NULL, `tmdbId` INTEGER NOT NULL, `title` TEXT NOT NULL, `releaseDate` INTEGER, `posterPath` TEXT, `genreIds` TEXT NOT NULL, `runtime` INTEGER, `isShort` INTEGER NOT NULL, `isDocumentary` INTEGER NOT NULL, `isTvMovie` INTEGER NOT NULL, `status` TEXT, `cachedAt` INTEGER NOT NULL, `detailsCachedAt` INTEGER, PRIMARY KEY(`mediaType`, `tmdbId`))",
+        "fields": [
+          {
+            "fieldPath": "mediaType",
+            "columnName": "mediaType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tmdbId",
+            "columnName": "tmdbId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "releaseDate",
+            "columnName": "releaseDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "posterPath",
+            "columnName": "posterPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "genreIds",
+            "columnName": "genreIds",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "runtime",
+            "columnName": "runtime",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isShort",
+            "columnName": "isShort",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDocumentary",
+            "columnName": "isDocumentary",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTvMovie",
+            "columnName": "isTvMovie",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "detailsCachedAt",
+            "columnName": "detailsCachedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "mediaType",
+            "tmdbId"
+          ]
+        }
+      },
+      {
+        "tableName": "credit",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `personId` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `filmId` INTEGER NOT NULL, `department` TEXT NOT NULL, `job` TEXT, `character` TEXT, `order` INTEGER, `isSelf` INTEGER NOT NULL, FOREIGN KEY(`personId`) REFERENCES `person`(`tmdbId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`mediaType`, `filmId`) REFERENCES `film`(`mediaType`, `tmdbId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "personId",
+            "columnName": "personId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mediaType",
+            "columnName": "mediaType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filmId",
+            "columnName": "filmId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "department",
+            "columnName": "department",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "job",
+            "columnName": "job",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "character",
+            "columnName": "character",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "order",
+            "columnName": "order",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isSelf",
+            "columnName": "isSelf",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_credit_personId_department",
+            "unique": false,
+            "columnNames": [
+              "personId",
+              "department"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_credit_personId_department` ON `${TABLE_NAME}` (`personId`, `department`)"
+          },
+          {
+            "name": "index_credit_mediaType_filmId",
+            "unique": false,
+            "columnNames": [
+              "mediaType",
+              "filmId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_credit_mediaType_filmId` ON `${TABLE_NAME}` (`mediaType`, `filmId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "person",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "personId"
+            ],
+            "referencedColumns": [
+              "tmdbId"
+            ]
+          },
+          {
+            "table": "film",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "mediaType",
+              "filmId"
+            ],
+            "referencedColumns": [
+              "mediaType",
+              "tmdbId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "viewing",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mediaType` TEXT NOT NULL, `filmId` INTEGER NOT NULL, `seenOn` INTEGER, PRIMARY KEY(`mediaType`, `filmId`))",
+        "fields": [
+          {
+            "fieldPath": "mediaType",
+            "columnName": "mediaType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filmId",
+            "columnName": "filmId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seenOn",
+            "columnName": "seenOn",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "mediaType",
+            "filmId"
+          ]
+        }
+      },
+      {
+        "tableName": "image_config",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `secureBaseUrl` TEXT NOT NULL, `posterSizes` TEXT NOT NULL, `profileSizes` TEXT NOT NULL, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "secureBaseUrl",
+            "columnName": "secureBaseUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "posterSizes",
+            "columnName": "posterSizes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "profileSizes",
+            "columnName": "profileSizes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "watch_providers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`movieId` INTEGER NOT NULL, `region` TEXT NOT NULL, `availability` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`movieId`, `region`))",
+        "fields": [
+          {
+            "fieldPath": "movieId",
+            "columnName": "movieId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "region",
+            "columnName": "region",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "availability",
+            "columnName": "availability",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "movieId",
+            "region"
+          ]
+        }
+      },
+      {
+        "tableName": "watch_region",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `englishName` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`code`))",
+        "fields": [
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "englishName",
+            "columnName": "englishName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "code"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ba1a4e66a83147aa6c3dd7fb3d5771be')"
+    ]
+  }
+}

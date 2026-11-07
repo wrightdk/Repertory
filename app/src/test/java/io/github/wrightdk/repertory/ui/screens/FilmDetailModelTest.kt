@@ -1,5 +1,7 @@
 package io.github.wrightdk.repertory.ui.screens
 
+import io.github.wrightdk.repertory.data.WatchAvailability
+import io.github.wrightdk.repertory.data.WatchProvider
 import io.github.wrightdk.repertory.data.local.dao.CreditInfo
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.Film
@@ -9,8 +11,13 @@ import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.Person
 import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
 import io.github.wrightdk.repertory.data.local.entity.Viewing
+import io.github.wrightdk.repertory.data.local.entity.WatchRegion
+import io.github.wrightdk.repertory.data.remote.TmdbError
+import io.github.wrightdk.repertory.data.remote.TmdbResult
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FilmDetailModelTest {
@@ -140,5 +147,42 @@ class FilmDetailModelTest {
         assertEquals(1968 to 149, d.year to d.runtime)
         val noRuntime = filmDetail(film(5, "X", LocalDate.of(2000, 1, 1), runtime = 0), null, today, ImageConfig.DEFAULT, 305)
         assertEquals(2000 to null, noRuntime.year to noRuntime.runtime)
+    }
+
+    // ---- Where to watch ----
+
+    private val tmdbLink = "https://www.themoviedb.org/movie/62/watch?locale=GB"
+
+    @Test fun `where to watch builds w92 logo urls and keeps the order`() {
+        val a = WatchAvailability(
+            link = tmdbLink,
+            stream = listOf(WatchProvider(11, "MUBI", "/mubi.jpg")),
+            buy = listOf(WatchProvider(2, "Apple TV", "/apple.jpg"), WatchProvider(130, "Sky Store", null)),
+        )
+
+        val loaded = whereToWatchLoaded(a, ImageConfig.DEFAULT)
+
+        assertEquals(listOf(WatchProviderChip("MUBI", "https://image.tmdb.org/t/p/w92/mubi.jpg")), loaded.stream)
+        assertEquals(listOf("Apple TV", "Sky Store"), loaded.buy.map { it.name })
+        assertNull(loaded.buy[1].logoUrl)
+        assertTrue(loaded.rent.isEmpty())
+        assertEquals(tmdbLink, loaded.link)
+    }
+
+    @Test fun `no TMDB link when there's nowhere to watch, or it isn't https`() {
+        val empty = whereToWatchLoaded(WatchAvailability(link = tmdbLink), ImageConfig.DEFAULT)
+        assertTrue(empty.isEmpty)
+        assertNull(empty.link)
+
+        val http = WatchAvailability(link = "http://example.com", rent = listOf(WatchProvider(2, "Apple TV")))
+        assertNull(whereToWatchLoaded(http, ImageConfig.DEFAULT).link)
+    }
+
+    @Test fun `a country is covered if TMDB lists it, and unknown without a list`() {
+        val list = TmdbResult.Success(listOf(WatchRegion("GB", "United Kingdom", 0), WatchRegion("FR", "France", 0)))
+        assertEquals(true, regionCovered("GB", list))
+        assertEquals(false, regionCovered("AQ", list))
+        assertNull(regionCovered("GB", TmdbResult.Failure(TmdbError.NoNetwork)))
+        assertNull(regionCovered("GB", TmdbResult.Success(emptyList())))
     }
 }

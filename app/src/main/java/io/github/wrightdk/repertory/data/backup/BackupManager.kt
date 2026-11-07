@@ -37,6 +37,7 @@ class BackupManager(
                 filterDefaults = settings.filterDefaults.value,
                 theme = settings.themeMode.value,
                 homeSort = settings.homeSort.value,
+                watchRegion = settings.watchRegion.value,
             ),
         )
     }
@@ -101,6 +102,7 @@ class BackupManager(
             backup.settings.filterDefaults?.let(settings::setFilterDefaults)
             backup.settings.theme?.let(settings::setThemeMode)
             backup.settings.homeSort?.let(settings::setHomeSort)
+            backup.settings.watchRegion?.let(settings::setWatchRegion)
         }
     }
 

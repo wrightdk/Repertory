@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.wrightdk.repertory.AppContainer
+import io.github.wrightdk.repertory.data.WatchAvailability
+import io.github.wrightdk.repertory.data.phoneWatchRegion
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.Film
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
@@ -14,14 +16,20 @@ import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.Person
 import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
 import io.github.wrightdk.repertory.data.local.entity.Viewing
+import io.github.wrightdk.repertory.data.local.entity.WatchRegion
+import io.github.wrightdk.repertory.data.remote.TmdbResult
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -39,6 +47,14 @@ sealed interface FilmDetailUiState {
         val credit: CreditLine?,
         val toward: List<TowardEntry>,
     ) : FilmDetailUiState
+}
+
+/** Where to watch before the logos get their URLs. */
+private sealed interface WatchLoad {
+    data object NoCountry : WatchLoad
+    data class Loading(val region: String) : WatchLoad
+    data class NotCovered(val region: String) : WatchLoad
+    data class Done(val region: String, val result: TmdbResult<WatchAvailability>) : WatchLoad
 }
 
 /** One list's raw inputs, before the viewings and filters are applied. */
@@ -73,6 +89,12 @@ class FilmDetailViewModel(
     private val deleteViewing: suspend (mediaType: MediaType, filmId: Int) -> Unit,
     /** Marks lists as just updated, for the Recent sort on Home. */
     private val touchLists: suspend (ids: List<Long>) -> Unit,
+    /** The country "Where to watch" shows: the one chosen in Settings, else the phone's; null for neither. */
+    watchRegion: Flow<String?>,
+    /** Where to watch a movie in a country (cached for a day; see `WatchProvidersRepository`). */
+    private val watchProviders: suspend (movieId: Int, region: String) -> TmdbResult<WatchAvailability>,
+    /** The countries JustWatch covers (cached for months). */
+    private val watchRegions: suspend () -> TmdbResult<List<WatchRegion>>,
     private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
 
@@ -113,8 +135,60 @@ class FilmDetailViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FilmDetailUiState.Loading)
 
+    /** Bumped by "Try again" to load again. */
+    private val watchRetries = MutableStateFlow(0)
+
+    /**
+     * Movies only. Loaded when the page opens and again when the country
+     * changes (in Settings, opened from here); the load is cancelled with the page.
+     */
+    val whereToWatch: StateFlow<WhereToWatchState> =
+        if (mediaType != MediaType.MOVIE) {
+            MutableStateFlow(WhereToWatchState.Hidden)
+        } else {
+            combine(watchRegion.distinctUntilChanged(), watchRetries) { region, _ -> region }
+                .flatMapLatest { region -> if (region == null) flowOf(WatchLoad.NoCountry) else loadWhereToWatch(region) }
+                .combine(images) { load, config ->
+                    when (load) {
+                        WatchLoad.NoCountry -> WhereToWatchState.NoCountry
+                        is WatchLoad.Loading -> WhereToWatchState.Shown(load.region, WhereToWatchContent.Loading)
+                        is WatchLoad.NotCovered -> WhereToWatchState.Shown(load.region, WhereToWatchContent.NotCovered)
+                        is WatchLoad.Done -> WhereToWatchState.Shown(
+                            load.region,
+                            when (val r = load.result) {
+                                is TmdbResult.Success -> whereToWatchLoaded(r.value, config)
+                                is TmdbResult.Failure -> WhereToWatchContent.Failed(r.error)
+                            },
+                        )
+                    }
+                }
+                // Kept while the page is in the back stack, so coming back from Settings doesn't reload.
+                .stateIn(viewModelScope, SharingStarted.Eagerly, WhereToWatchState.Shown("", WhereToWatchContent.Loading))
+        }
+
     init {
         viewModelScope.launch { images.value = imageConfig() }
+    }
+
+    /** "Try again" after Where to watch failed to load. */
+    fun retryWhereToWatch() {
+        watchRetries.value++
+    }
+
+    /** The country list and the film's providers together; a country JustWatch doesn't cover says so instead. */
+    private fun loadWhereToWatch(region: String): Flow<WatchLoad> = flow {
+        emit(WatchLoad.Loading(region))
+        val load = coroutineScope {
+            val covered = async { regionCovered(region, watchRegions()) }
+            val providers = async { watchProviders(filmId, region) }
+            if (covered.await() == false) {
+                providers.cancel()
+                WatchLoad.NotCovered(region)
+            } else {
+                WatchLoad.Done(region, providers.await())
+            }
+        }
+        emit(load)
     }
 
     /** Ticks the film (dated today) or unticks it, which drops the date. Unreleased films can't be ticked. */
@@ -175,6 +249,9 @@ class FilmDetailViewModel(
                         saveViewing = viewingDao::upsert,
                         deleteViewing = viewingDao::delete,
                         touchLists = { trackedDao.touchAll(it, System.currentTimeMillis()) },
+                        watchRegion = container.settings.watchRegion.map { it ?: phoneWatchRegion() },
+                        watchProviders = container.watchProvidersRepository::load,
+                        watchRegions = container.watchProvidersRepository::regions,
                     )
                 }
             }

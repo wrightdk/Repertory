@@ -55,6 +55,8 @@ internal data class BackupSettingsJson(
     val theme: String? = null,
     /** "name", "progress" or "recent". */
     val homeSort: String? = null,
+    /** ISO 3166-1 code, "GB"; null when following the phone's region. Older versions ignore it. */
+    val watchRegion: String? = null,
 )
 
 /** Each switch means "show". One left out takes its out-of-the-box value. */

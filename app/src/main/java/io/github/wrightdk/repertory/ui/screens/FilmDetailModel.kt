@@ -1,5 +1,7 @@
 package io.github.wrightdk.repertory.ui.screens
 
+import io.github.wrightdk.repertory.data.WatchAvailability
+import io.github.wrightdk.repertory.data.WatchProvider
 import io.github.wrightdk.repertory.data.displayCharacter
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.Film
@@ -9,6 +11,10 @@ import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.Person
 import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
 import io.github.wrightdk.repertory.data.local.entity.Viewing
+import io.github.wrightdk.repertory.data.local.entity.WatchRegion
+import io.github.wrightdk.repertory.data.remote.TmdbError
+import io.github.wrightdk.repertory.data.remote.TmdbResult
+import io.github.wrightdk.repertory.data.remote.getOrNull
 import io.github.wrightdk.repertory.ui.roleLabel
 import java.time.LocalDate
 
@@ -171,3 +177,58 @@ internal fun filmDetail(film: Film, viewing: Viewing?, today: LocalDate, images:
         },
     )
 }
+
+/** A provider chip under "Where to watch": logo and name. Not tappable. */
+data class WatchProviderChip(val name: String, val logoUrl: String?)
+
+/** The "Where to watch" section of a film page. */
+sealed interface WhereToWatchState {
+    /** TV series: TMDB's movie endpoint doesn't cover them, so no section. */
+    data object Hidden : WhereToWatchState
+
+    /** No country chosen in Settings, and the phone's settings name none. */
+    data object NoCountry : WhereToWatchState
+
+    /** For [region] ("GB"), the chosen country or the phone's. */
+    data class Shown(val region: String, val content: WhereToWatchContent) : WhereToWatchState
+}
+
+/** What the section shows under the header for one country. */
+sealed interface WhereToWatchContent {
+    data object Loading : WhereToWatchContent
+
+    /** [stream], [rent] and [buy] in JustWatch's order; all empty means nowhere (the dashed card). */
+    data class Loaded(
+        val stream: List<WatchProviderChip>,
+        val rent: List<WatchProviderChip>,
+        val buy: List<WatchProviderChip>,
+        /** TMDB's watch page; only offered when there's something to watch. */
+        val link: String?,
+    ) : WhereToWatchContent {
+        val isEmpty: Boolean get() = stream.isEmpty() && rent.isEmpty() && buy.isEmpty()
+    }
+
+    /** JustWatch has no data for the country at all (it's not in TMDB's list). */
+    data object NotCovered : WhereToWatchContent
+
+    /** Couldn't load and nothing cached to fall back on. */
+    data class Failed(val error: TmdbError) : WhereToWatchContent
+}
+
+fun whereToWatchLoaded(availability: WatchAvailability, config: ImageConfig): WhereToWatchContent.Loaded {
+    fun List<WatchProvider>.chips() = map { WatchProviderChip(it.name, config.logoUrl(it.logoPath)) }
+    return WhereToWatchContent.Loaded(
+        stream = availability.stream.chips(),
+        rent = availability.rent.chips(),
+        buy = availability.buy.chips(),
+        // Only TMDB's own https page is ever opened; nothing else is built from it.
+        link = availability.link?.takeIf { it.startsWith("https://") && !availability.isEmpty },
+    )
+}
+
+/**
+ * Whether JustWatch covers [region], from TMDB's country list: null when the
+ * list couldn't be had (offline, never fetched), so the film's data decides.
+ */
+fun regionCovered(region: String, regions: TmdbResult<List<WatchRegion>>): Boolean? =
+    regions.getOrNull()?.takeIf { it.isNotEmpty() }?.any { it.code == region }

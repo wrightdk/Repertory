@@ -28,6 +28,20 @@ class SettingsStoreTest {
         assertFalse(keyPrefs.contains("own_tmdb_api_key"))
     }
 
+    @Test fun `the where to watch country is saved, cleared, and only ever a country code`() {
+        assertNull(store().watchRegion.value)
+
+        store().setWatchRegion("FR")
+        assertEquals("FR", store().watchRegion.value)
+
+        store().setWatchRegion("France")
+        assertEquals("FR", store().watchRegion.value)
+
+        store().setWatchRegion(null)
+        assertNull(store().watchRegion.value)
+        assertFalse(prefs.contains("watch_region"))
+    }
+
     @Test fun `a key saved with the other settings moves to its own file`() {
         prefs.edit().putString("own_tmdb_api_key", "old-key").putString("theme", "DARK").commit()
 

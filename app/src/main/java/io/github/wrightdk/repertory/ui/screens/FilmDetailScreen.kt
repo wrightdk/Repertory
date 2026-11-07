@@ -74,13 +74,17 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-/** One film, from design/film-detail-*: poster and credit, the Seen toggle and date, and the lists it counts toward. */
+/**
+ * One film, from design/film-detail-* and justwatch-feature-*: poster and
+ * credit, the Seen toggle and date, where to watch it, and the lists it counts toward.
+ */
 @Composable
 fun FilmDetailScreen(
     trackedPersonId: Long,
     mediaType: MediaType,
     filmId: Int,
     onBack: () -> Unit,
+    onChangeWatchCountry: () -> Unit,
 ) {
     val context = LocalContext.current
     val viewModel: FilmDetailViewModel = viewModel(
@@ -88,6 +92,7 @@ fun FilmDetailScreen(
         factory = FilmDetailViewModel.factory(context.appContainer, trackedPersonId, mediaType, filmId),
     )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val whereToWatch by viewModel.whereToWatch.collectAsStateWithLifecycle()
 
     Scaffold(topBar = { RepertoryTopBar(title = {}, onBack = onBack) }) { innerPadding ->
         val modifier = Modifier
@@ -98,6 +103,9 @@ fun FilmDetailScreen(
             FilmDetailUiState.Missing -> Missing(modifier)
             is FilmDetailUiState.Loaded -> FilmDetailContent(
                 state = s,
+                whereToWatch = whereToWatch,
+                onRetryWhereToWatch = viewModel::retryWhereToWatch,
+                onChangeWatchCountry = onChangeWatchCountry,
                 onToggleSeen = viewModel::toggleSeen,
                 onSetSeenOn = viewModel::setSeenOn,
                 onToday = viewModel::setSeenToday,
@@ -110,6 +118,9 @@ fun FilmDetailScreen(
 @Composable
 private fun FilmDetailContent(
     state: FilmDetailUiState.Loaded,
+    whereToWatch: WhereToWatchState,
+    onRetryWhereToWatch: () -> Unit,
+    onChangeWatchCountry: () -> Unit,
     onToggleSeen: () -> Unit,
     onSetSeenOn: (LocalDate?) -> Unit,
     onToday: () -> Unit,
@@ -141,8 +152,16 @@ private fun FilmDetailContent(
                 modifier = Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.sm),
             )
         }
+        WhereToWatchSection(
+            state = whereToWatch,
+            onRetry = onRetryWhereToWatch,
+            onChangeCountry = onChangeWatchCountry,
+            modifier = Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = SectionGap),
+        )
         if (state.toward.isNotEmpty()) {
-            CountsToward(state.toward, Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = 28.dp))
+            // The JustWatch credit row already carries 8dp of its touch target below the text.
+            val top = if (whereToWatch == WhereToWatchState.Hidden) SectionGap else SectionGap - spacing.sm
+            CountsToward(state.toward, Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = top))
         }
     }
 }
@@ -425,6 +444,9 @@ private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInsta
 private fun Long.toLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 private val ToggleHeight = 56.dp
+
+/** Above each hairline-topped section ("Where to watch", "Counts toward"). */
+private val SectionGap = 28.dp
 
 // From the mockup: 14/1.3 Plex meta, 28/1.1 Newsreader title, 14/1.35 Plex credit, 16/1.3 Newsreader list names.
 private val TitleStyle = serif(28f, 30.8f, tracking = -0.28f)

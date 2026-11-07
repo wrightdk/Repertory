@@ -1,0 +1,11 @@
+{
+  "id": 26811,
+  "results": {
+    "FR": {
+      "link": "https://www.themoviedb.org/movie/26811/watch?locale=FR",
+      "flatrate": [
+        {"logo_path": "/la_cinetek.jpg", "provider_id": 310, "provider_name": "LaCinetek", "display_priority": 12}
+      ]
+    }
+  }
+}

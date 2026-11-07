@@ -6,6 +6,7 @@ import io.github.wrightdk.repertory.data.FilmDetailsSync
 import io.github.wrightdk.repertory.data.SettingsStore
 import io.github.wrightdk.repertory.data.Suggestion
 import io.github.wrightdk.repertory.data.TmdbRepository
+import io.github.wrightdk.repertory.data.WatchProvidersRepository
 import io.github.wrightdk.repertory.data.backup.Backup
 import io.github.wrightdk.repertory.data.backup.BackupManager
 import io.github.wrightdk.repertory.data.backup.RestoreMode
@@ -23,6 +24,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -54,6 +56,10 @@ class AppContainer(context: Context) {
 
     val tmdbRepository: TmdbRepository by lazy { TmdbRepository(tmdbService, database) }
 
+    val watchProvidersRepository: WatchProvidersRepository by lazy {
+        WatchProvidersRepository(tmdbService, database.watchProvidersDao(), database.watchRegionDao())
+    }
+
     /**
      * Outlives every screen, for work that must finish once started. A failure
      * in one job is logged and doesn't cancel the others or crash the app.
@@ -73,6 +79,11 @@ class AppContainer(context: Context) {
             fetchPersonIfMissing = tmdbRepository::fetchPersonIfMissing,
             log = { Log.i("Repertory", it) },
         )
+    }
+
+    /** Drops cached data that's past its keep-by time (where to watch, and its country list). Runs in the background. */
+    fun purgeExpiredCaches() {
+        appScope.launch { watchProvidersRepository.purgeExpired() }
     }
 
     /**

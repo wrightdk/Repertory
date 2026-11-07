@@ -2,6 +2,7 @@ package io.github.wrightdk.repertory.data.backup
 
 import io.github.wrightdk.repertory.data.HomeSort
 import io.github.wrightdk.repertory.data.ThemeMode
+import io.github.wrightdk.repertory.data.isRegionCode
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.Viewing
@@ -60,7 +61,7 @@ sealed interface BackupReadResult {
  *   "data": {
  *     "lists": [{ "personId": 240, "department": "Directing", "addedAt": "…", "updatedAt": "…", "filters": null }],
  *     "viewings": [{ "mediaType": "movie", "filmId": 62, "seenOn": "2022-03-11" }],
- *     "settings": { "filterDefaults": { … }, "theme": "system", "homeSort": "name" }
+ *     "settings": { "filterDefaults": { … }, "theme": "system", "homeSort": "name", "watchRegion": "GB" }
  *   }
  * }
  * ```
@@ -172,6 +173,7 @@ private fun Backup.toFile() = BackupFile(
             filterDefaults = settings.filterDefaults?.toJson(),
             theme = settings.theme?.name?.lowercase(),
             homeSort = settings.homeSort?.name?.lowercase(),
+            watchRegion = settings.watchRegion,
         ),
     ),
 )
@@ -216,7 +218,7 @@ private fun BackupFile.toBackup(): Backup {
     )
 }
 
-/** Unknown theme or sort names (from a newer version) are left out rather than rejected. */
+/** Unknown theme or sort names (from a newer version), or a malformed country, are left out rather than rejected. */
 private fun BackupSettingsJson?.toSettings(): BackupSettings = if (this == null) {
     BackupSettings()
 } else {
@@ -224,6 +226,7 @@ private fun BackupSettingsJson?.toSettings(): BackupSettings = if (this == null)
         filterDefaults = filterDefaults?.toFilters(),
         theme = ThemeMode.entries.firstOrNull { it.name.equals(theme, ignoreCase = true) },
         homeSort = HomeSort.entries.firstOrNull { it.name.equals(homeSort, ignoreCase = true) },
+        watchRegion = watchRegion?.uppercase()?.takeIf(::isRegionCode),
     )
 }
 

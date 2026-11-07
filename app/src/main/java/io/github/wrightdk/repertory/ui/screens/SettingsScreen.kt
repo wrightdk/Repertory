@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -56,6 +57,8 @@ import io.github.wrightdk.repertory.R
 import io.github.wrightdk.repertory.appContainer
 import io.github.wrightdk.repertory.data.FilmCategory
 import io.github.wrightdk.repertory.data.ThemeMode
+import io.github.wrightdk.repertory.data.phoneWatchRegion
+import io.github.wrightdk.repertory.data.regionDisplayName
 import io.github.wrightdk.repertory.data.shows
 import io.github.wrightdk.repertory.data.with
 import io.github.wrightdk.repertory.ui.components.FilterSwitchRow
@@ -67,11 +70,17 @@ import io.github.wrightdk.repertory.ui.theme.spacing
  * From design/settings-*.png: the filter defaults every list follows unless it
  * has its own, the theme, and About. Plus, not in the mockup and styled like
  * the About row: back up and restore ("Your data", see [BackupViewModel]) and
- * the own TMDB key. [openApiKeyDialog] opens straight onto
- * the key dialog, for the way in from a key error.
+ * the own TMDB key; and the "Where to watch" country. [openApiKeyDialog] opens
+ * straight onto the key dialog, for the way in from a key error;
+ * [openWatchCountryDialog] onto the country picker, from a film's "Where to watch".
  */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Boolean = false) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onAbout: () -> Unit,
+    openApiKeyDialog: Boolean = false,
+    openWatchCountryDialog: Boolean = false,
+) {
     val context = LocalContext.current
     val container = context.appContainer
     val settings = container.settings
@@ -79,6 +88,10 @@ fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Bo
     val theme by settings.themeMode.collectAsStateWithLifecycle()
     val ownKey by settings.ownTmdbApiKey.collectAsStateWithLifecycle()
     var keyDialogOpen by rememberSaveable { mutableStateOf(openApiKeyDialog) }
+    val watchRegion by settings.watchRegion.collectAsStateWithLifecycle()
+    var countryDialogOpen by rememberSaveable { mutableStateOf(openWatchCountryDialog) }
+    val locale = LocalConfiguration.current.locales[0]
+    val phoneRegion = remember(locale) { phoneWatchRegion(locale) }
     val spacing = MaterialTheme.spacing
 
     val backup: BackupViewModel = viewModel(factory = BackupViewModel.factory(container, context.contentResolver))
@@ -144,6 +157,20 @@ fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Bo
             }
             HorizontalDivider(Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.xl))
             Text(
+                stringResource(R.string.settings_where_to_watch),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.gutter, bottom = spacing.sm),
+            )
+            NavigationRow(
+                icon = R.drawable.ic_public,
+                label = stringResource(R.string.settings_watch_country),
+                supporting = watchRegion?.let { regionDisplayName(it, locale) }
+                    ?: phoneRegion?.let { stringResource(R.string.settings_watch_country_phone, regionDisplayName(it, locale)) }
+                    ?: stringResource(R.string.settings_watch_country_none),
+                onClick = { countryDialogOpen = true },
+            )
+            HorizontalDivider(Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.xl))
+            Text(
                 stringResource(R.string.settings_your_data),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.gutter, bottom = spacing.sm),
@@ -196,6 +223,19 @@ fun SettingsScreen(onBack: () -> Unit, onAbout: () -> Unit, openApiKeyDialog: Bo
                 keyDialogOpen = false
             },
             onDismiss = { keyDialogOpen = false },
+        )
+    }
+
+    if (countryDialogOpen) {
+        WatchCountryDialog(
+            current = watchRegion,
+            phoneRegion = phoneRegion,
+            loadRegions = container.watchProvidersRepository::regions,
+            onChoose = { code ->
+                settings.setWatchRegion(code)
+                countryDialogOpen = false
+            },
+            onDismiss = { countryDialogOpen = false },
         )
     }
 

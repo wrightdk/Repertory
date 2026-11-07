@@ -52,6 +52,7 @@ App name: **Repertory** (working name). Package / applicationId: `io.github.wrig
   - `/person/{id}` and `/person/{id}/combined_credits` (or `movie_credits`)
   - `/movie/{id}`
   - `/configuration` for image base URLs
+  - `/movie/{id}/watch/providers` and `/watch/providers/regions` for Where to watch (see Film detail)
 - Cache fetched person and film data locally so the app works offline once loaded.
 - **Attribution (required):** About screen with the TMDB logo and the line "This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB." TMDB logo less prominent than our own branding.
 
@@ -110,10 +111,18 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - Poster, "1968, 149 min", title, credit line for the list it was opened from ("Directed by Stanley Kubrick", "Written by …", "Michael Caine as Harry Palmer").
    - One Seen toggle ("Mark as seen" / "Seen"). When seen, an optional "Date seen" field with a date picker and a "Today" shortcut. Ticking fills in today; the date can be changed or cleared.
    - Unreleased films have no toggle, just "Not out yet. Due [date]. You can tick it off once it's released."
+   - "Where to watch" (movies only, between the date and "Counts toward"; design/justwatch-feature-*): TMDB's watch provider data, which comes from JustWatch.
+     - Header "Where to watch" with the country on the right; tapping the country opens Settings with the country picker up.
+     - Stream (TMDB's "flatrate"), Rent and Buy rows of provider chips (logo and name, not tappable), each in `display_priority` order; empty rows are hidden. Ads and free tiers are ignored. Then "See all options on TMDB", which opens the region's TMDB watch page (the response's `link`; no other links are built).
+     - Nothing in the country: a dashed card, "Not streaming, renting or for sale here right now. Try your local cinema.", and no TMDB link.
+     - Loading: one skeleton row. Failure with nothing cached: one line and "Try again". No country known: a line and "Choose country". A country JustWatch doesn't cover: says so, with "Choose another country".
+     - Every state ends with JustWatch's logo (`res/drawable/justwatch_logo.xml`, converted unaltered from their SVG) and "Availability data from JustWatch, via TMDB.", the whole row a link to justwatch.com. Required attribution.
+     - Caching (`WatchProvidersRepository`): per film per country, served without a call for 24 hours, kept up to 48 hours as an offline fallback, then deleted (on read and at app start). "Nowhere" is cached too. Never in the JSON backup. The country is never sent to TMDB: a film's response holds every country and the app picks one out.
    - "Counts toward": every tracked list the film is in, with that list's progress ("Stanley Kubrick as Director, 9 of 13").
 8. **Settings**
    - "Show in lists": the filter defaults.
    - Theme: Light / Dark / System segmented button.
+   - "Where to watch" → "Country" (not in the design; styled like the About row). A dialog lists only the countries TMDB has watch data for (`/watch/providers/regions`, cached for 90 days and kept up to 180, TMDB's six-month limit), by name in the user's language, with search. No location or network-based detection: until a country is chosen, the region in the phone's language settings is used ("United Kingdom, from your phone's settings"). The chosen country is in the JSON backup (`SettingsStore.watchRegion`).
    - "Use your own TMDB API key" item (not in the design; see TMDB section), styled like the About row with an on/off line ("On. Key ending 1a2b."). Its dialog checks the key with TMDB before saving (`AppContainer.checkTmdbApiKey`) and catches a pasted v4 read access token; Remove goes back to the built-in key. Saving or removing retries any list whose details fetch stopped.
    - Key errors (401, or 429 after retries) on Search, Add to your list and Filmography say so plainly and offer "Use your own key" ("Change your key" once one is set), which opens Settings with the key dialog up (`ui/screens/TmdbErrors.kt`).
    - About row.
@@ -146,7 +155,6 @@ All in one place in code (`data/FilmFilters.kt`) and used everywhere a count or 
 - **Letterboxd CSV import.** Letterboxd's data export includes watched films (title, year, Letterboxd URI). Match to TMDB by title + year; show a review screen for unmatched or ambiguous results.
 - **Export / import my data** as JSON, so users can back up and move devices.
 - **"Next up"**: earliest unseen film for each tracked person, shown on home.
-- **Where to watch** on the film page: TMDB watch providers for GB (streaming, rent, buy). Must credit JustWatch as the data source with their logo. Cache for about a day only.
 
 ## Later (not now)
 

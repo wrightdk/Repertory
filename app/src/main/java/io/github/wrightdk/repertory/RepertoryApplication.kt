@@ -15,6 +15,8 @@ class RepertoryApplication : Application() {
         // Lists whose film details never finished (added before this existed, or the
         // app was closed mid-fetch) carry on in the background.
         container.filmDetailsSync.backfill()
+        // Where-to-watch data is only kept for a day or two, its country list for up to six months.
+        container.purgeExpiredCaches()
         // Lists whose fetch stopped because the phone was offline carry on once it's back online.
         getSystemService(ConnectivityManager::class.java)?.registerDefaultNetworkCallback(
             object : ConnectivityManager.NetworkCallback() {

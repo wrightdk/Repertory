@@ -120,3 +120,46 @@ data class ImagesConfigurationDto(
     @SerialName("poster_sizes") val posterSizes: List<String> = emptyList(),
     @SerialName("profile_sizes") val profileSizes: List<String> = emptyList(),
 )
+
+/** `/watch/providers/regions`: every country JustWatch (and so TMDB) has availability for. */
+@Serializable
+data class WatchRegionsDto(
+    val results: List<WatchRegionDto> = emptyList(),
+)
+
+@Serializable
+data class WatchRegionDto(
+    /** "GB". */
+    @SerialName("iso_3166_1") val code: String = "",
+    @SerialName("english_name") val englishName: String = "",
+)
+
+/**
+ * `/movie/{id}/watch/providers`: JustWatch availability, keyed by ISO 3166-1
+ * region ("GB"). Only the categories the app shows are declared; "ads" and
+ * "free" are ignored with any other unknown field.
+ */
+@Serializable
+data class WatchProvidersDto(
+    val id: Int = 0,
+    val results: Map<String, WatchProviderRegionDto> = emptyMap(),
+)
+
+@Serializable
+data class WatchProviderRegionDto(
+    /** TMDB's own watch page for the film in this region. */
+    val link: String? = null,
+    /** Subscription streaming ("Stream" in the app). */
+    val flatrate: List<WatchProviderDto> = emptyList(),
+    val rent: List<WatchProviderDto> = emptyList(),
+    val buy: List<WatchProviderDto> = emptyList(),
+)
+
+@Serializable
+data class WatchProviderDto(
+    @SerialName("provider_id") val providerId: Int = 0,
+    @SerialName("provider_name") val providerName: String = "",
+    @SerialName("logo_path") val logoPath: String? = null,
+    /** Lower comes first. Missing sorts last. */
+    @SerialName("display_priority") val displayPriority: Int = Int.MAX_VALUE,
+)

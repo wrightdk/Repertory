@@ -1,7 +1,9 @@
 package io.github.wrightdk.repertory.data.local
 
 import androidx.room.TypeConverter
+import io.github.wrightdk.repertory.data.WatchAvailability
 import java.time.LocalDate
+import kotlinx.serialization.json.Json
 
 class Converters {
     @TypeConverter
@@ -24,4 +26,15 @@ class Converters {
     @TypeConverter
     fun stringToIntList(value: String): List<Int> =
         if (value.isEmpty()) emptyList() else value.split(",").map(String::toInt)
+
+    /** Watch providers cache. Throws on a row that won't parse; the repository treats that as no row. */
+    @TypeConverter
+    fun watchAvailabilityToJson(availability: WatchAvailability): String = json.encodeToString(WatchAvailability.serializer(), availability)
+
+    @TypeConverter
+    fun jsonToWatchAvailability(value: String): WatchAvailability = json.decodeFromString(WatchAvailability.serializer(), value)
+
+    private companion object {
+        val json = Json { ignoreUnknownKeys = true }
+    }
 }

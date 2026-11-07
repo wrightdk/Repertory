@@ -181,13 +181,17 @@ fun RepertoryNavHost() {
                 mediaType = MediaType.valueOf(route.mediaType),
                 filmId = route.filmId,
                 onBack = { entry.back() },
+                // Back returns to the film, which then shows the new country.
+                onChangeWatchCountry = { entry.ifResumed { navController.navigate(SettingsRoute(chooseWatchCountry = true)) } },
             )
         }
         screen<SettingsRoute> { entry ->
+            val route = entry.toRoute<SettingsRoute>()
             SettingsScreen(
                 onBack = { entry.back() },
                 onAbout = { entry.ifResumed { navController.navigate(AboutRoute) } },
-                openApiKeyDialog = entry.toRoute<SettingsRoute>().editApiKey,
+                openApiKeyDialog = route.editApiKey,
+                openWatchCountryDialog = route.chooseWatchCountry,
             )
         }
         screen<AboutRoute> { entry ->

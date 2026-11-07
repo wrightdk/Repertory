@@ -6,12 +6,15 @@ import androidx.test.core.app.ApplicationProvider
 import io.github.wrightdk.repertory.data.HomeSort
 import io.github.wrightdk.repertory.data.SettingsStore
 import io.github.wrightdk.repertory.data.ThemeMode
+import io.github.wrightdk.repertory.data.WatchAvailability
+import io.github.wrightdk.repertory.data.WatchProvider
 import io.github.wrightdk.repertory.data.local.RepertoryDatabase
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.Person
 import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
 import io.github.wrightdk.repertory.data.local.entity.Viewing
+import io.github.wrightdk.repertory.data.local.entity.WatchProvidersCache
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.test.runTest
@@ -123,9 +126,13 @@ class BackupManagerTest {
         val phone = Phone("a")
         phone.db.personDao().upsert(Person(240, "Stanley Kubrick", "/k.jpg", "Directing", null, null, 0))
         phone.track(240, "Directing", addedAt = 1_000)
+        phone.db.watchProvidersDao().upsert(
+            WatchProvidersCache(62, "GB", WatchAvailability(stream = listOf(WatchProvider(11, "MUBI", "/mubi.jpg"))), fetchedAt = now),
+        )
 
         val text = BackupCodec.encode(phone.manager.export())
         assertTrue(!text.contains("Kubrick") && !text.contains("/k.jpg"))
+        assertTrue(!text.contains("MUBI") && !text.contains("/mubi.jpg"))
     }
 
     // ---- Replace ----

@@ -23,6 +23,13 @@ data class ImageConfig(
 
     fun profileUrl(path: String?, minWidthPx: Int): String? = url(path, profileSizes, minWidthPx)
 
+    /**
+     * A watch provider's logo, always w92: shown at 32dp (83px on the Pixel's
+     * 2.6x screen), and TMDB serves w92 for logos as for posters.
+     */
+    fun logoUrl(path: String?): String? =
+        if (path.isNullOrBlank()) null else secureBaseUrl + LOGO_SIZE + path
+
     private fun url(path: String?, sizes: List<String>, minWidthPx: Int): String? {
         if (path.isNullOrBlank()) return null
         return secureBaseUrl + pickSize(sizes, minWidthPx) + path
@@ -30,6 +37,8 @@ data class ImageConfig(
 
     companion object {
         const val SINGLE_ROW_ID = 0
+
+        private const val LOGO_SIZE = "w92"
 
         /** Used until `/configuration` has been fetched once. Values as TMDB has served for years. */
         val DEFAULT = ImageConfig(
