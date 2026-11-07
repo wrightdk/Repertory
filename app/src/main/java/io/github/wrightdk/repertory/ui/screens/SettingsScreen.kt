@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -25,6 +26,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -144,36 +147,43 @@ private fun ThemePicker(selected: ThemeMode, onPick: (ThemeMode) -> Unit) {
         ThemeMode.SYSTEM to R.string.theme_system,
     )
     val c = MaterialTheme.colorScheme
-    // One outline round the whole group, as in the mockup: no dividers between segments.
-    SingleChoiceSegmentedButtonRow(
-        Modifier
-            .fillMaxWidth()
-            // At least 40dp; taller with large text so the labels aren't cut off.
-            .heightIn(min = 40.dp)
-            .clip(CircleShape)
-            .border(1.dp, c.outline, CircleShape),
-    ) {
-        for ((mode, label) in options) {
-            SegmentedButton(
-                selected = mode == selected,
-                onClick = { onPick(mode) },
-                shape = RectangleShape,
-                border = BorderStroke(0.dp, Color.Transparent),
-                colors = SegmentedButtonDefaults.colors(
-                    activeContainerColor = c.secondaryContainer,
-                    activeContentColor = c.onSurface,
-                    inactiveContainerColor = c.surface,
-                    inactiveContentColor = c.onSurface,
-                    activeBorderColor = c.outline,
-                    inactiveBorderColor = c.outline,
-                ),
-                icon = { SegmentedButtonDefaults.Icon(active = mode == selected) },
-                modifier = Modifier.heightIn(min = 40.dp),
-            ) {
-                Text(
-                    stringResource(label),
-                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, lineHeight = 14.sp),
-                )
+    // SegmentedButton pads itself out to a 48dp touch target but only paints a
+    // 40dp surface in the middle of it, which left a band above and below the
+    // selected fill inside our outline. Without the padding the fill runs edge
+    // to edge, as in the mockup. Each segment is still about a third of the
+    // screen wide, so it's an easy target.
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+        // One outline round the whole group, as in the mockup: no dividers between segments.
+        SingleChoiceSegmentedButtonRow(
+            Modifier
+                .fillMaxWidth()
+                // At least 40dp; taller with large text so the labels aren't cut off.
+                .heightIn(min = 40.dp)
+                .clip(CircleShape)
+                .border(1.dp, c.outline, CircleShape),
+        ) {
+            for ((mode, label) in options) {
+                SegmentedButton(
+                    selected = mode == selected,
+                    onClick = { onPick(mode) },
+                    shape = RectangleShape,
+                    border = BorderStroke(0.dp, Color.Transparent),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = c.secondaryContainer,
+                        activeContentColor = c.onSurface,
+                        inactiveContainerColor = c.surface,
+                        inactiveContentColor = c.onSurface,
+                        activeBorderColor = c.outline,
+                        inactiveBorderColor = c.outline,
+                    ),
+                    icon = { SegmentedButtonDefaults.Icon(active = mode == selected) },
+                    modifier = Modifier.heightIn(min = 40.dp),
+                ) {
+                    Text(
+                        stringResource(label),
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, lineHeight = 14.sp),
+                    )
+                }
             }
         }
     }
