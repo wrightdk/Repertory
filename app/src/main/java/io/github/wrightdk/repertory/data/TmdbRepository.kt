@@ -120,7 +120,8 @@ class TmdbRepository(
     /**
      * The roles [personId] could be tracked in: each department with cached credits,
      * its title count and the job they most often had in it. Most titles first.
-     * Empty until [refreshPerson] has succeeded.
+     * Appearances as self don't count, and departments with nothing else are
+     * left out. Empty until [refreshPerson] has succeeded.
      */
     suspend fun roles(personId: Int): List<RoleSummary> {
         val topJobs = creditDao.jobCounts(personId)

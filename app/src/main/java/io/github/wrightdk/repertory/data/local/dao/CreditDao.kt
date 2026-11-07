@@ -17,11 +17,16 @@ interface CreditDao {
     /**
      * The departments [personId] has credits in, with how many distinct titles each
      * (a movie and a series can share a TMDB id, so both columns identify a title). Most first.
+     *
+     * Counts aim to match what a list shows by default, so appearances as self
+     * are left out, and a department with nothing else isn't returned at all.
+     * Once the global filter defaults exist, this should apply them instead.
      */
     @Query(
         """
         SELECT department, COUNT(DISTINCT mediaType || ':' || filmId) AS filmCount FROM credit
-        WHERE personId = :personId GROUP BY department ORDER BY filmCount DESC, department
+        WHERE personId = :personId AND NOT isSelf
+        GROUP BY department ORDER BY filmCount DESC, department
         """
     )
     suspend fun departments(personId: Int): List<DepartmentCount>

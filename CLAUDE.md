@@ -87,6 +87,7 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - Person header: photo, name, life dates ("1928–1999" or "b. 1983").
    - "Track as" with "Each role is its own list with its own progress." Then one checkbox row per department from their credits, with a credit count ("12 credits as Writer"). The known-for department is pre-ticked unless already tracked.
    - Roles already on the list show a bookmark icon and "Already on your list" in place of a checkbox.
+   - Credit counts must match what the list will show by default. For now they only leave out appearances as self, and a department whose count drops to zero isn't offered. **Once the global filter defaults exist (Filters, set in Settings), these counts must apply them** (`CreditDao.departments`).
    - Bottom button: "Add 1 list" / "Add N lists", or a disabled "Choose a role" when nothing is ticked. Adding returns home with a snackbar ("Added Stanley Kubrick as Writer").
 4. **Filmography** (one list)
    - Header: back, "On your list" button (opens the remove dialog), photo, name, role and life dates ("Director, 1928–1999", "Actor, born 1933").

@@ -3,6 +3,7 @@ package io.github.wrightdk.repertory.data
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import io.github.wrightdk.repertory.data.local.RepertoryDatabase
+import io.github.wrightdk.repertory.data.local.entity.Credit
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.ImageConfig
 import io.github.wrightdk.repertory.data.local.entity.MediaType
@@ -118,16 +119,35 @@ class TmdbRepositoryTest {
         )
     }
 
-    @Test fun `departments are counted by distinct film`() = runTest {
+    @Test fun `departments are counted by distinct film, without appearances as self`() = runTest {
         routeVarda()
         repo.refreshPerson(VARDA)
 
         val departments = repo.departments(VARDA).associate { it.department to it.filmCount }
 
+        // Acting has 4 credits, 2 of them as Self.
         assertEquals(
-            mapOf("Directing" to 6, "Acting" to 4, "Writing" to 2, "Editing" to 1, "Sound" to 1),
+            mapOf("Directing" to 6, "Acting" to 2, "Writing" to 2, "Editing" to 1, "Sound" to 1),
             departments,
         )
+    }
+
+    @Test fun `a department with only appearances as self is not offered`() = runTest {
+        routeVarda()
+        repo.refreshPerson(VARDA)
+        db.creditDao().replaceForPerson(
+            VARDA,
+            listOf(
+                Credit(personId = VARDA, mediaType = MediaType.MOVIE, filmId = 929052, department = "Acting",
+                    job = null, character = "Self", order = 0, isSelf = true),
+                Credit(personId = VARDA, mediaType = MediaType.TV, filmId = 87772, department = "Acting",
+                    job = null, character = "Herself (archive footage)", order = 1, isSelf = true),
+                Credit(personId = VARDA, mediaType = MediaType.MOVIE, filmId = 499, department = "Directing",
+                    job = "Director", character = null, order = null, isSelf = false),
+            ),
+        )
+
+        assertEquals(listOf(RoleSummary("Directing", 1, "Director")), repo.roles(VARDA))
     }
 
     @Test fun `fresh person is served from cache without a request`() = runTest {
