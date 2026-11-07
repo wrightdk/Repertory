@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
 import kotlinx.coroutines.flow.Flow
@@ -30,4 +31,22 @@ interface TrackedPersonDao {
 
     @Query("SELECT COUNT(*) FROM tracked_person")
     fun observeCount(): Flow<Int>
+
+    /** The departments [personId] is already tracked in. */
+    @Query("SELECT department FROM tracked_person WHERE personId = :personId")
+    fun observeDepartments(personId: Int): Flow<List<String>>
+
+    @Query("SELECT id FROM tracked_person WHERE personId = :personId AND department = :department")
+    suspend fun idFor(personId: Int, department: String): Long?
+
+    /**
+     * Tracks [personId] in each of [departments], skipping any already tracked.
+     * Returns the list ids in the same order, existing lists included.
+     */
+    @Transaction
+    suspend fun track(personId: Int, departments: List<String>, now: Long): List<Long> =
+        departments.map { department ->
+            val id = insert(TrackedPerson(personId = personId, department = department, addedAt = now))
+            if (id != -1L) id else checkNotNull(idFor(personId, department))
+        }
 }

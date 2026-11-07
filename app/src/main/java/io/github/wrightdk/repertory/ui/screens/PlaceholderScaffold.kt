@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.wrightdk.repertory.R
 import io.github.wrightdk.repertory.ui.theme.spacing
@@ -33,6 +34,7 @@ fun RepertoryTopBar(
     title: @Composable () -> Unit,
     onBack: (() -> Unit)?,
     actions: @Composable RowScope.() -> Unit = {},
+    height: Dp = AppBarHeight,
 ) {
     TopAppBar(
         // Without a back arrow Material insets the title 16dp; the design uses the 20dp gutter.
@@ -48,7 +50,7 @@ fun RepertoryTopBar(
             }
         },
         actions = actions,
-        expandedHeight = AppBarHeight,
+        expandedHeight = height,
         // Action icons are ink in the design, not Material's onSurfaceVariant.
         colors = TopAppBarDefaults.topAppBarColors(
             actionIconContentColor = MaterialTheme.colorScheme.onSurface,

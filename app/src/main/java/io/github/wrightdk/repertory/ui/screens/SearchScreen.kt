@@ -393,7 +393,7 @@ private fun SearchError(error: TmdbError, onRetry: () -> Unit) {
 
 /** Newsreader headline and a line of help, as in the mockup's "No one called …" state. */
 @Composable
-private fun Message(title: String, body: String, action: @Composable () -> Unit = {}) {
+internal fun Message(title: String, body: String, action: @Composable () -> Unit = {}) {
     Column(
         modifier = Modifier.padding(horizontal = MaterialTheme.spacing.xl, vertical = MaterialTheme.spacing.xxxl),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm),

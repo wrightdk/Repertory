@@ -41,6 +41,15 @@ data class PersonSearchResult(
     val knownForTitles: List<String>,
 )
 
+/** A department a person has credits in. */
+data class RoleSummary(
+    val department: String,
+    /** Distinct titles credited in [department]. */
+    val creditCount: Int,
+    /** The crew job they most often had in [department] ("Screenplay"); null for acting. */
+    val topJob: String?,
+)
+
 data class PersonSearchPage(
     val results: List<PersonSearchResult>,
     val page: Int,
@@ -107,6 +116,20 @@ class TmdbRepository(
 
     /** Departments with cached credits for [personId]; empty until [refreshPerson] has succeeded. */
     suspend fun departments(personId: Int): List<DepartmentCount> = creditDao.departments(personId)
+
+    /**
+     * The roles [personId] could be tracked in: each department with cached credits,
+     * its title count and the job they most often had in it. Most titles first.
+     * Empty until [refreshPerson] has succeeded.
+     */
+    suspend fun roles(personId: Int): List<RoleSummary> {
+        val topJobs = creditDao.jobCounts(personId)
+            .groupBy { it.department }
+            .mapValues { (_, jobs) -> jobs.first().job }
+        return creditDao.departments(personId).map { d ->
+            RoleSummary(d.department, d.filmCount, topJobs[d.department])
+        }
+    }
 
     /**
      * Fetches the person and all their film credits and replaces the cached

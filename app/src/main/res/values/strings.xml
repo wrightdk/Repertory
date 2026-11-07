@@ -23,4 +23,25 @@
     <string name="search_error_busy_body">Too many requests for now. Wait a minute and try again, or use your own TMDB API key in Settings.</string>
     <string name="search_error_other_title">Search didn’t work.</string>
     <string name="search_error_other_body">Something went wrong at TMDB. Try again in a moment.</string>
+
+    <!-- Add to your list -->
+    <string name="add_person_title">Add to your list</string>
+    <string name="track_as">Track as</string>
+    <string name="track_as_body">Each role is its own list with its own progress.</string>
+    <string name="already_on_list">Already on your list</string>
+    <plurals name="credits_as">
+        <item quantity="one">%1$d credit as %2$s</item>
+        <item quantity="other">%1$d credits as %2$s</item>
+    </plurals>
+    <plurals name="add_lists">
+        <item quantity="one">Add %1$d list</item>
+        <item quantity="other">Add %1$d lists</item>
+    </plurals>
+    <string name="choose_a_role">Choose a role</string>
+    <string name="add_person_no_credits_title">No film credits yet.</string>
+    <string name="add_person_no_credits_body">TMDB doesn’t list any films or TV for this person, so there’s nothing to track.</string>
+    <string name="add_person_error_other_title">Couldn’t load this person.</string>
+    <string name="add_person_error_other_body">Something went wrong at TMDB. Try again in a moment.</string>
+    <string name="add_person_error_missing_title">TMDB no longer has this person.</string>
+    <string name="add_person_error_missing_body">They may have been merged with another entry. Go back and search again.</string>
 </resources>

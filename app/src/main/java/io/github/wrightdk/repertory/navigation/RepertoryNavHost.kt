@@ -40,10 +40,10 @@ fun RepertoryNavHost() {
             AddPersonScreen(
                 personId = route.personId,
                 onBack = back,
-                onAdded = {
+                onAdded = { trackedPersonId ->
                     // Adding finishes the search flow: drop Search and Add Person
                     // so Back from the filmography returns Home.
-                    navController.navigate(FilmographyRoute(SAMPLE_TRACKED_PERSON_ID)) {
+                    navController.navigate(FilmographyRoute(trackedPersonId)) {
                         popUpTo(HomeRoute)
                     }
                 },

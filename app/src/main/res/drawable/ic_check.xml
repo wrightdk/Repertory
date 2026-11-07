@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+  <!-- Material Symbols "check", weight 600 as in the mockup's checkbox. -->
+  <path
+      android:fillColor="@android:color/white"
+      android:pathData="M382,734L136,488L210,414L382,586L750,218L824,292L382,734Z"/>
+</vector>
