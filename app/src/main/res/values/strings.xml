@@ -86,5 +86,10 @@
     <string name="filmography_missing_title">This list is gone.</string>
     <string name="filmography_missing_body">It’s no longer on your list. Go back to see the rest.</string>
     <string name="ticked_off">Ticked off %1$s, %2$d of %3$d seen</string>
+    <string name="ticked_off_no_count">Ticked off %1$s</string>
+    <string name="progress_loading_description">Progress loading</string>
+    <string name="fetching_film_details">Fetching film details from TMDB…</string>
+    <string name="film_details_failed_title">Couldn’t finish loading film details.</string>
+    <string name="film_details_failed_offline">Check your connection and try again. The count shows once every film is in.</string>
     <string name="ticked_off_all">%1$s — that’s all %2$d.</string>
 </resources>

@@ -10,6 +10,9 @@ class RepertoryApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        // Lists whose film details never finished (added before this existed, or the
+        // app was closed mid-fetch) carry on in the background.
+        container.filmDetailsSync.backfill()
     }
 }
 

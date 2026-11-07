@@ -19,6 +19,7 @@ import io.github.wrightdk.repertory.data.remote.errorOrNull
 import io.github.wrightdk.repertory.data.remote.fixture
 import io.github.wrightdk.repertory.data.remote.getOrNull
 import java.time.LocalDate
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -46,6 +47,7 @@ class TmdbRepositoryTest {
         database = db,
         clock = { now },
         retryPolicy = RetryPolicy.NONE,
+        detailsRequestInterval = Duration.ZERO,
     )
 
     @After fun tearDown() {
@@ -215,15 +217,17 @@ class TmdbRepositoryTest {
 
     // ---- Films ----
 
-    @Test fun `fillMissingFilmDetails fetches runtimes and status, marks shorts and skips missing films`() = runTest {
+    @Test fun `fillMissingFilmDetails fetches a list's runtimes and status, marks shorts and checks missing films`() = runTest {
         routeVarda()
         tmdb.routeFixture("/movie/499", "movie_feature.json")
         tmdb.routeFixture("/movie/277677", "movie_short.json")
         repo.refreshPerson(VARDA)
+        assertEquals(5, repo.observeMissingDetailsCount(VARDA, "Directing").first())
 
-        // 8 movies; only 2 have fixtures, the other 6 get 404 and are skipped.
-        assertEquals(TmdbResult.Success(2), repo.fillMissingFilmDetails(VARDA))
+        // 5 directed movies; only 2 have fixtures, the other 3 get 404.
+        assertEquals(TmdbResult.Success(2), repo.fillMissingFilmDetails(VARDA, "Directing"))
         assertEquals("the TV series is never sent to /movie", 0, tmdb.requestCount("/movie/87772"))
+        assertEquals("acting credits aren't in this list", 0, tmdb.requestCount("/movie/929052"))
 
         val byId = repo.observeFilmography(VARDA, "Directing").first().associate { it.film.tmdbId to it.film }
         assertTrue(byId.getValue(277677).isShort)
@@ -232,18 +236,65 @@ class TmdbRepositoryTest {
         assertFalse(byId.getValue(499).isShort)
         assertEquals(90, byId.getValue(499).runtime)
         assertNull(byId.getValue(44018).runtime)
+        assertEquals("a 404 doesn't hold the list up", 0, repo.observeMissingDetailsCount(VARDA, "Directing").first())
+
+        val before = tmdb.requests.size
+        assertEquals(TmdbResult.Success(0), repo.fillMissingFilmDetails(VARDA, "Directing"))
+        assertEquals("nothing left to fetch", before, tmdb.requests.size)
     }
 
     @Test fun `fillMissingFilmDetails stops on a bad key`() = runTest {
         routeVarda()
         repo.refreshPerson(VARDA)
         val before = tmdb.requests.size
-        for (id in listOf(499, 44018, 277677, 324072, 451995, 929052, 13440, 2433)) {
+        for (id in listOf(499, 44018, 277677, 324072, 451995)) {
             tmdb.route("/movie/$id", json(401, fixture("error_401.json")))
         }
 
-        assertEquals(TmdbError.InvalidApiKey, repo.fillMissingFilmDetails(VARDA).errorOrNull())
+        assertEquals(TmdbError.InvalidApiKey, repo.fillMissingFilmDetails(VARDA, "Directing").errorOrNull())
         assertEquals("only the first batch of 4 is tried", 4, tmdb.requests.size - before)
+        assertEquals(5, repo.observeMissingDetailsCount(VARDA, "Directing").first())
+    }
+
+    @Test fun `fillMissingFilmDetails retries server errors and rate limits`() = runTest {
+        routeVarda()
+        repo.refreshPerson(VARDA)
+        for (id in listOf(44018, 277677, 324072, 451995)) tmdb.routeFixture("/movie/$id", "movie_short.json")
+        tmdb.route(
+            "/movie/499",
+            json(503, "{}"),
+            json(429, fixture("error_429.json")),
+            json(200, fixture("movie_feature.json")),
+        )
+
+        assertTrue(repo.fillMissingFilmDetails(VARDA, "Directing") is TmdbResult.Success)
+        assertEquals(3, tmdb.requestCount("/movie/499"))
+        assertEquals(90, db.filmDao().get(MediaType.MOVIE, 499)!!.runtime)
+    }
+
+    @Test fun `fillMissingFilmDetails gives up on a list after repeated server errors`() = runTest {
+        routeVarda()
+        repo.refreshPerson(VARDA)
+        for (id in listOf(499, 44018, 277677, 324072, 451995)) tmdb.route("/movie/$id", json(503, "{}"))
+
+        assertEquals(TmdbError.Http(503), repo.fillMissingFilmDetails(VARDA, "Directing").errorOrNull())
+        assertEquals("first try plus 3 retries", 4, tmdb.requestCount("/movie/499"))
+        assertEquals("not marked as checked", 5, repo.observeMissingDetailsCount(VARDA, "Directing").first())
+    }
+
+    @Test fun `fillMissingFilmDetails refetches stale details of unreleased films only`() = runTest {
+        routeVarda()
+        // Only 499 has details; the other four 404 and are marked as checked.
+        tmdb.routeFixture("/movie/499", "movie_feature.json")
+        repo.refreshPerson(VARDA)
+        repo.fillMissingFilmDetails(VARDA, "Directing")
+        val film = db.filmDao().get(MediaType.MOVIE, 499)!!
+        db.filmDao().upsert(film.copy(status = "Post Production", releaseDate = null))
+
+        now += 2.days.inWholeMilliseconds
+        repo.fillMissingFilmDetails(VARDA, "Directing")
+        assertEquals(2, tmdb.requestCount("/movie/499"))
+        assertEquals("released films stay cached", 1, tmdb.requestCount("/movie/44018"))
     }
 
     @Test fun `refreshing a person keeps film details already fetched`() = runTest {

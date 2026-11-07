@@ -25,6 +25,9 @@ interface TrackedPersonDao {
     @Query("SELECT * FROM tracked_person WHERE id = :id")
     fun observe(id: Long): Flow<TrackedPerson?>
 
+    @Query("SELECT * FROM tracked_person WHERE id = :id")
+    suspend fun get(id: Long): TrackedPerson?
+
     /** Marks the list as just updated, for the Recent sort. */
     @Query("UPDATE tracked_person SET updatedAt = :now WHERE id = :id")
     suspend fun touch(id: Long, now: Long)

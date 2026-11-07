@@ -23,6 +23,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -82,7 +85,13 @@ class TmdbRepository(
     private val clock: () -> Long = System::currentTimeMillis,
     private val retryPolicy: RetryPolicy = RetryPolicy(),
     private val cachePolicy: CachePolicy = CachePolicy(),
+    /** Minimum gap between details requests. TMDB allows about 50 a second; stay well under. */
+    detailsRequestInterval: Duration = 50.milliseconds,
+    /** Waits before each retry of a transient details failure, on top of [retryPolicy]'s 429 handling. */
+    private val detailsRetryDelays: List<Duration> = listOf(2.seconds, 5.seconds, 15.seconds),
 ) {
+    private val detailsRateLimiter = RateLimiter(detailsRequestInterval)
+
     private val personDao = database.personDao()
     private val filmDao = database.filmDao()
     private val creditDao = database.creditDao()
@@ -190,24 +199,78 @@ class TmdbRepository(
     }
 
     /**
-     * Fetches `/movie/{id}` for every movie of [personId] that has never had its
-     * details loaded (credits alone don't include runtime or status, so shorts
-     * and unreleased films can't be told apart without this). Runs a few requests at a time and stops early on
-     * errors that would fail every remaining request too; a missing film is skipped.
+     * Fetches `/movie/{id}` for every movie in one list ([personId] in
+     * [department]) whose details have never been loaded, plus unreleased ones
+     * whose details have gone stale. Credits alone carry no runtime or status,
+     * so until this finishes, shorts and unreleased films can't be told apart
+     * and the list's count isn't final.
+     *
+     * Runs a few requests at a time, spaced to stay well under TMDB's rate
+     * limit (shared by every caller). Transient failures (no network, 429, 5xx)
+     * are retried with backoff; a film TMDB doesn't have (404) or can't serve is
+     * marked as checked so it never blocks the list. Stops early on errors that
+     * would fail every remaining request too.
      *
      * @return the number of films whose details were fetched.
      */
-    suspend fun fillMissingFilmDetails(personId: Int): TmdbResult<Int> {
+    suspend fun fillMissingFilmDetails(personId: Int, department: String): TmdbResult<Int> {
+        val today = today()
+        val ids = filmDao.listMovies(personId, department).filter { film ->
+            val cachedAt = film.detailsCachedAt
+            val upcoming = !film.isCanceled && !film.isReleased(today)
+            cachedAt == null || (upcoming && !isFresh(cachedAt, cachePolicy.unreleasedFilmDetails))
+        }.map { it.tmdbId }
+
         var fetched = 0
-        for (batch in filmDao.movieIdsMissingDetails(personId).chunked(DETAILS_CONCURRENCY)) {
+        for (batch in ids.chunked(DETAILS_CONCURRENCY)) {
             val results = coroutineScope {
-                batch.map { id -> async { fetchMovieDetails(id) } }.awaitAll()
+                batch.map { id -> async { fetchDetailsForList(id) } }.awaitAll()
             }
-            fetched += results.count { it is TmdbResult.Success }
-            val fatal = results.firstNotNullOfOrNull { r -> r.errorOrNull()?.takeIf { it != TmdbError.NotFound } }
+            fetched += results.count { it is TmdbResult.Success && it.value }
+            val fatal = results.firstNotNullOfOrNull { it.errorOrNull() }
             if (fatal != null) return TmdbResult.Failure(fatal)
         }
         return TmdbResult.Success(fetched)
+    }
+
+    /**
+     * Ids of the lists whose count isn't final yet (some films still lack details).
+     * Home shows those lists' count and progress bar as loading.
+     */
+    fun observeListIdsMissingDetails(): Flow<List<Long>> = filmDao.observeListIdsMissingDetails()
+
+    /** Movies in this list whose details have never been fetched; 0 once its count is final. */
+    fun observeMissingDetailsCount(personId: Int, department: String): Flow<Int> =
+        filmDao.observeMissingDetailsCount(personId, department)
+
+    /**
+     * One film's details for [fillMissingFilmDetails]. Success(true) when
+     * fetched, Success(false) when TMDB has nothing usable (marked as checked),
+     * Failure when it should stop the whole run.
+     */
+    private suspend fun fetchDetailsForList(movieId: Int): TmdbResult<Boolean> {
+        var attempt = 0
+        while (true) {
+            detailsRateLimiter.acquire()
+            val error = fetchMovieDetails(movieId).errorOrNull() ?: return TmdbResult.Success(true)
+            val transient = error == TmdbError.NoNetwork || error == TmdbError.RateLimited ||
+                (error is TmdbError.Http && error.code >= 500)
+            when {
+                transient && attempt < detailsRetryDelays.size -> delay(detailsRetryDelays[attempt++])
+                transient || error == TmdbError.InvalidApiKey -> return TmdbResult.Failure(error)
+                else -> {
+                    // 404 (deleted or merged), another 4xx, or a response that won't parse:
+                    // retrying won't help, and the film shouldn't hold up the list forever.
+                    markDetailsChecked(movieId)
+                    return TmdbResult.Success(false)
+                }
+            }
+        }
+    }
+
+    private suspend fun markDetailsChecked(movieId: Int) {
+        val film = filmDao.get(MediaType.MOVIE, movieId) ?: return
+        filmDao.upsert(film.copy(detailsCachedAt = clock()))
     }
 
     private suspend fun fetchMovieDetails(movieId: Int): TmdbResult<Film> =

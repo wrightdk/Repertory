@@ -203,7 +203,11 @@ class AddPersonViewModel(
                     roles = repo::roles,
                     trackedDepartments = trackedDao.observeDepartments(personId),
                     imageConfig = repo::imageConfig,
-                    track = { id, departments -> trackedDao.track(id, departments, System.currentTimeMillis()) },
+                    track = { id, departments ->
+                        // Each new list's film details load in the background, so its count is final when shown.
+                        trackedDao.track(id, departments, System.currentTimeMillis())
+                            .onEach(container.filmDetailsSync::enqueue)
+                    },
                 )
             }
         }

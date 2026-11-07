@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -82,10 +83,11 @@ fun FilmographyScreen(
     LaunchedEffect(viewModel) {
         // collectLatest: a new tick replaces the snackbar showing, rather than queueing behind it.
         viewModel.tickedOff.collectLatest { t ->
-            val message = if (t.seen == t.total) {
-                context.getString(R.string.ticked_off_all, t.title, t.total)
-            } else {
-                context.getString(R.string.ticked_off, t.title, t.seen, t.total)
+            val message = when {
+                // Count not final yet: say what was ticked, not a number that may change.
+                t.seen == null || t.total == null -> context.getString(R.string.ticked_off_no_count, t.title)
+                t.seen == t.total -> context.getString(R.string.ticked_off_all, t.title, t.total)
+                else -> context.getString(R.string.ticked_off, t.title, t.seen, t.total)
             }
             snackbar.showSnackbar(message)
         }
@@ -106,7 +108,7 @@ fun FilmographyScreen(
         FilmographyList(
             state = state,
             contentPadding = innerPadding,
-            onRowShown = viewModel::onRowShown,
+            onRetryDetails = viewModel::retryDetails,
             onToggleSeen = viewModel::toggleSeen,
             onOpen = { onFilmSelected(it.tmdbId) },
             onRetry = viewModel::retry,
@@ -119,7 +121,7 @@ fun FilmographyScreen(
 private fun FilmographyList(
     state: FilmographyUiState,
     contentPadding: PaddingValues,
-    onRowShown: (FilmRow) -> Unit,
+    onRetryDetails: () -> Unit,
     onToggleSeen: (FilmRow) -> Unit,
     onOpen: (FilmRow) -> Unit,
     onRetry: () -> Unit,
@@ -144,7 +146,7 @@ private fun FilmographyList(
             }
             is FilmographyBody.Loaded -> {
                 val content = body.content
-                item(key = "progress") { Progress(content) }
+                item(key = "progress") { Progress(content, body.details, onRetryDetails) }
                 if (content.items.isEmpty()) {
                     item(key = "empty") {
                         Message(
@@ -161,7 +163,6 @@ private fun FilmographyList(
                     when (item) {
                         is FilmographyItem.Decade -> DecadeHeader(item.decade)
                         is FilmographyItem.Film -> {
-                            LaunchedEffect(item.row.key) { onRowShown(item.row) }
                             FilmRowItem(item.row, onToggle = { onToggleSeen(item.row) }, onOpen = { onOpen(item.row) })
                         }
                     }
@@ -233,50 +234,123 @@ private fun Header(header: FilmographyHeader?) {
     }
 }
 
-/** Ink rule, "9 of 13 … 69%", the tally of cells, the filter summary, hairline. */
+/**
+ * Ink rule, "9 of 13 … 69%", the tally of cells, the filter summary, hairline.
+ * Until every film's details are in, the count and tally are skeletons and a
+ * status line takes the filter summary's place: none of them would be final.
+ */
 @Composable
-private fun Progress(content: FilmographyContent) {
-    val ink2 = MaterialTheme.colorScheme.onSurfaceVariant
-    val progressDescription = stringResource(R.string.progress_description, content.seen, content.total)
+private fun Progress(content: FilmographyContent, details: DetailsStatus, onRetryDetails: () -> Unit) {
     Column(Modifier.padding(horizontal = MaterialTheme.spacing.gutter)) {
         HorizontalDivider(color = MaterialTheme.colorScheme.onSurface)
         Column(
             modifier = Modifier.padding(top = MaterialTheme.spacing.lg, bottom = 14.dp),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.md),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clearAndSetSemantics { contentDescription = progressDescription },
-            ) {
-                Text(
-                    content.seen.toString(),
-                    style = MaterialTheme.typography.displayMedium.copy(lineHeight = 44.sp),
-                    modifier = Modifier.alignByBaseline(),
-                )
-                Text(
-                    stringResource(R.string.progress_of, content.total),
-                    style = OfStyle,
-                    color = ink2,
-                    modifier = Modifier
-                        .padding(start = MaterialTheme.spacing.sm)
-                        .alignByBaseline(),
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    content.percent?.let { stringResource(R.string.progress_percent, it) }
-                        ?: stringResource(R.string.progress_percent_none),
-                    style = OfStyle,
-                    color = ink2,
-                    modifier = Modifier.alignByBaseline(),
-                )
+            if (details == DetailsStatus.Complete) {
+                Count(content)
+                Ledger(content.ledger)
+                FilterSummaryLine(content.filterSummary)
+            } else {
+                CountSkeleton(pulsing = details == DetailsStatus.Loading)
+                DetailsStatusLine(details, onRetryDetails)
             }
-            Ledger(content.ledger)
-            FilterSummaryLine(content.filterSummary)
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
+
+@Composable
+private fun Count(content: FilmographyContent) {
+    val ink2 = MaterialTheme.colorScheme.onSurfaceVariant
+    val progressDescription = stringResource(R.string.progress_description, content.seen, content.total)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics { contentDescription = progressDescription },
+    ) {
+        Text(
+            content.seen.toString(),
+            style = MaterialTheme.typography.displayMedium.copy(lineHeight = 44.sp),
+            modifier = Modifier.alignByBaseline(),
+        )
+        Text(
+            stringResource(R.string.progress_of, content.total),
+            style = OfStyle,
+            color = ink2,
+            modifier = Modifier
+                .padding(start = MaterialTheme.spacing.sm)
+                .alignByBaseline(),
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            content.percent?.let { stringResource(R.string.progress_percent, it) }
+                ?: stringResource(R.string.progress_percent_none),
+            style = OfStyle,
+            color = ink2,
+            modifier = Modifier.alignByBaseline(),
+        )
+    }
+}
+
+/** Blocks where the count, percentage and tally go, the same height as the real thing. */
+@Composable
+private fun CountSkeleton(pulsing: Boolean) {
+    val block = MaterialTheme.colorScheme.surfaceVariant
+    val loading = stringResource(R.string.progress_loading_description)
+    Column(
+        modifier = Modifier
+            .then(if (pulsing) Modifier.skeletonPulse() else Modifier)
+            .clearAndSetSemantics { contentDescription = loading },
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.md),
+    ) {
+        Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.Bottom) {
+            Box(Modifier.size(width = 28.dp, height = 36.dp).background(block, SkeletonBarShape))
+            Spacer(Modifier.width(MaterialTheme.spacing.sm))
+            Box(Modifier.size(width = 64.dp, height = 18.dp).background(block, SkeletonBarShape))
+            Spacer(Modifier.weight(1f))
+            Box(Modifier.size(width = 44.dp, height = 18.dp).background(block, SkeletonBarShape))
+        }
+        Box(Modifier.fillMaxWidth(0.6f).height(18.dp).background(block, CellShape))
+    }
+}
+
+/** In the filter summary's place while details load: what's happening, or that it stopped and a retry. */
+@Composable
+private fun DetailsStatusLine(details: DetailsStatus, onRetry: () -> Unit) {
+    val ink2 = MaterialTheme.colorScheme.onSurfaceVariant
+    when (details) {
+        DetailsStatus.Complete -> Unit
+        DetailsStatus.Loading -> Text(
+            stringResource(R.string.fetching_film_details),
+            style = MetaStyle,
+            color = ink2,
+            modifier = Modifier.padding(vertical = MaterialTheme.spacing.xs),
+        )
+        is DetailsStatus.Failed -> Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.xs)) {
+            Text(
+                stringResource(R.string.film_details_failed_title),
+                style = MetaStyle.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(stringResource(details.error.detailsFailedBody), style = MetaStyle, color = ink2)
+            TextButton(
+                onClick = onRetry,
+                contentPadding = PaddingValues(horizontal = 0.dp),
+            ) {
+                Text(stringResource(R.string.try_again), style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
+            }
+        }
+    }
+}
+
+private val TmdbError.detailsFailedBody: Int
+    get() = when (this) {
+        TmdbError.NoNetwork -> R.string.film_details_failed_offline
+        TmdbError.InvalidApiKey -> R.string.search_error_key_body
+        TmdbError.RateLimited -> R.string.search_error_busy_body
+        else -> R.string.filmography_error_other_body
+    }
 
 /** One small cell per film shown, in list order, wrapping as needed. */
 @Composable

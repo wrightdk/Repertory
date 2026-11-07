@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.wrightdk.repertory.AppContainer
+import io.github.wrightdk.repertory.data.DetailsSyncState
 import io.github.wrightdk.repertory.data.local.dao.FilmCredit
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
 import io.github.wrightdk.repertory.data.local.entity.ImageConfig
@@ -32,8 +33,6 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
 
 sealed interface FilmographyBody {
@@ -43,10 +42,25 @@ sealed interface FilmographyBody {
     /** No credits cached and TMDB couldn't be reached. */
     data class Error(val error: TmdbError) : FilmographyBody
 
-    data class Loaded(val content: FilmographyContent) : FilmographyBody
+    /**
+     * [content] lists the films straight away; its count, ledger and filter
+     * summary are final only once [details] is [DetailsStatus.Complete].
+     */
+    data class Loaded(val content: FilmographyContent, val details: DetailsStatus) : FilmographyBody
 
     /** The list was removed (or never existed). */
     data object Missing : FilmographyBody
+}
+
+/** Whether every film in the list has its details (runtime, status), so the count is final. */
+sealed interface DetailsStatus {
+    data object Complete : DetailsStatus
+
+    /** Still fetching in the background. */
+    data object Loading : DetailsStatus
+
+    /** The background fetch stopped; [FilmographyViewModel.retryDetails] starts it again. */
+    data class Failed(val error: TmdbError) : DetailsStatus
 }
 
 data class FilmographyUiState(
@@ -55,13 +69,17 @@ data class FilmographyUiState(
     val body: FilmographyBody = FilmographyBody.Loading,
 )
 
-/** "Ticked off Lolita, 10 of 13 seen", shown after ticking from the list. */
-data class TickedOff(val title: String, val seen: Int, val total: Int)
+/**
+ * "Ticked off Lolita, 10 of 13 seen", shown after ticking from the list. The
+ * count is null while film details are still loading, as it isn't final yet.
+ */
+data class TickedOff(val title: String, val seen: Int?, val total: Int?)
 
 /**
  * One list's filmography. Films come from the Room cache (filled by
- * [refreshPerson] on first open); each movie's details (runtime, status) are
- * fetched lazily as its row comes on screen, see [onRowShown].
+ * [refreshPerson] on first open). Every movie's details (runtime, status) are
+ * fetched in the background by [io.github.wrightdk.repertory.data.FilmDetailsSync]
+ * ([requestDetails]); until that's done the count shows as loading.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FilmographyViewModel(
@@ -71,7 +89,12 @@ class FilmographyViewModel(
     filmography: (personId: Int, department: String) -> Flow<List<FilmCredit>>,
     viewings: Flow<List<Viewing>>,
     private val refreshPerson: suspend (personId: Int) -> TmdbResult<Unit>,
-    private val refreshMovie: suspend (movieId: Int) -> TmdbResult<Unit>,
+    /** Movies in the list still without details. */
+    missingDetails: (personId: Int, department: String) -> Flow<Int>,
+    /** The list's background details fetch, null when idle. */
+    detailsSync: Flow<DetailsSyncState?>,
+    /** Starts the list's background details fetch unless it's running. */
+    private val requestDetails: (trackedPersonId: Long) -> Unit,
     private val imageConfig: suspend () -> ImageConfig,
     private val setSeen: suspend (mediaType: MediaType, filmId: Int, seenOn: LocalDate?, seen: Boolean) -> Unit,
     private val touchList: suspend (trackedPersonId: Long) -> Unit,
@@ -101,19 +124,22 @@ class FilmographyViewModel(
         if (tp == null) {
             flowOf(FilmographyUiState(body = FilmographyBody.Missing))
         } else {
+            val details = combine(missingDetails(tp.personId, tp.department), detailsSync) { missing, sync ->
+                when {
+                    missing == 0 -> DetailsStatus.Complete
+                    sync is DetailsSyncState.Failed -> DetailsStatus.Failed(sync.error)
+                    else -> DetailsStatus.Loading
+                }
+            }
             combine(
-                person(tp.personId),
-                filmography(tp.personId, tp.department),
+                combine(person(tp.personId), filmography(tp.personId, tp.department), ::Pair),
                 viewingsByFilm,
                 images,
                 load,
-            ) { p, credits, seen, config, l -> state(tp, p, credits, seen, config, l) }
+                details,
+            ) { (p, credits), seen, config, l, d -> state(tp, p, credits, seen, config, l, d) }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FilmographyUiState())
-
-    /** Movie ids whose details have been asked for this session; each is fetched at most once. */
-    private val requested = mutableSetOf<Int>()
-    private val detailsPermits = Semaphore(DETAILS_CONCURRENCY)
 
     init {
         viewModelScope.launch { images.value = imageConfig() }
@@ -122,14 +148,8 @@ class FilmographyViewModel(
 
     fun retry() = reload()
 
-    /**
-     * A row came on screen: make sure its movie details are cached, so runtime
-     * and release status are known. Cheap to call repeatedly.
-     */
-    fun onRowShown(row: FilmRow) {
-        if (row.mediaType != MediaType.MOVIE || !requested.add(row.tmdbId)) return
-        viewModelScope.launch { detailsPermits.withPermit { refreshMovie(row.tmdbId) } }
-    }
+    /** Starts the background details fetch again after it failed. */
+    fun retryDetails() = requestDetails(trackedPersonId)
 
     /** Ticks (dated today) or unticks a released film. Unreleased films can't be ticked. */
     fun toggleSeen(row: FilmRow) {
@@ -139,11 +159,18 @@ class FilmographyViewModel(
             touchList(trackedPersonId)
             if (!row.seen) {
                 // Report the count once the tick has reached the list, not from the state at tap time.
-                val content = withTimeoutOrNull(TICK_REPORT_TIMEOUT_MS) {
-                    uiState.mapNotNull { (it.body as? FilmographyBody.Loaded)?.content }
-                        .first { c -> c.items.any { it is FilmographyItem.Film && it.row.key == row.key && it.row.seen } }
+                val loaded = withTimeoutOrNull(TICK_REPORT_TIMEOUT_MS) {
+                    uiState.mapNotNull { it.body as? FilmographyBody.Loaded }
+                        .first { b -> b.content.items.any { it is FilmographyItem.Film && it.row.key == row.key && it.row.seen } }
                 } ?: return@launch
-                _tickedOff.trySend(TickedOff(row.title, content.seen, content.total))
+                val final = loaded.details == DetailsStatus.Complete
+                _tickedOff.trySend(
+                    TickedOff(
+                        title = row.title,
+                        seen = loaded.content.seen.takeIf { final },
+                        total = loaded.content.total.takeIf { final },
+                    ),
+                )
             }
         }
     }
@@ -156,6 +183,9 @@ class FilmographyViewModel(
                 is TmdbResult.Success -> Load.Done
                 is TmdbResult.Failure -> Load.Failed(r.error)
             }
+            // Fill in details for any films the refresh added (or that never finished
+            // loading). A no-op when nothing is missing.
+            requestDetails(trackedPersonId)
         }
     }
 
@@ -166,6 +196,7 @@ class FilmographyViewModel(
         seen: Map<Pair<MediaType, Int>, Viewing>,
         config: ImageConfig,
         l: Load,
+        details: DetailsStatus,
     ): FilmographyUiState {
         val header = p?.let { filmographyHeader(it, tp.department, config, PHOTO_MIN_WIDTH_PX) }
         val body = when {
@@ -180,6 +211,7 @@ class FilmographyViewModel(
                     images = config,
                     posterMinWidthPx = POSTER_MIN_WIDTH_PX,
                 ),
+                details = details,
             )
             l is Load.Failed -> FilmographyBody.Error(l.error)
             else -> FilmographyBody.Loading
@@ -194,7 +226,6 @@ class FilmographyViewModel(
         /** 40dp poster is ~104px on the Pixel's 2.6x screen; TMDB serves w154. */
         private const val POSTER_MIN_WIDTH_PX = 104
 
-        private const val DETAILS_CONCURRENCY = 4
         private const val TICK_REPORT_TIMEOUT_MS = 2_000L
 
         fun factory(container: AppContainer, trackedPersonId: Long): ViewModelProvider.Factory = viewModelFactory {
@@ -209,7 +240,9 @@ class FilmographyViewModel(
                     filmography = repo::observeFilmography,
                     viewings = viewingDao.observeAll(),
                     refreshPerson = { repo.refreshPerson(it) },
-                    refreshMovie = { repo.refreshMovie(it) },
+                    missingDetails = repo::observeMissingDetailsCount,
+                    detailsSync = container.filmDetailsSync.state(trackedPersonId),
+                    requestDetails = container.filmDetailsSync::enqueue,
                     imageConfig = repo::imageConfig,
                     setSeen = { type, id, date, seen ->
                         if (seen) viewingDao.upsert(Viewing(type, id, date)) else viewingDao.delete(type, id)

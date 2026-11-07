@@ -1,0 +1,72 @@
+package io.github.wrightdk.repertory.data
+
+import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
+import io.github.wrightdk.repertory.data.remote.TmdbError
+import io.github.wrightdk.repertory.data.remote.TmdbResult
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/** Where a list's background details fetch stands. */
+sealed interface DetailsSyncState {
+    data object Running : DetailsSyncState
+
+    /** Stopped before every film's details were in; [FilmDetailsSync.enqueue] tries again. */
+    data class Failed(val error: TmdbError) : DetailsSyncState
+}
+
+/**
+ * Fetches every film's details for each list in the background, so a list's
+ * "X of Y" is final when it's first shown. Runs in [scope] (the app's), so it
+ * carries on when the user leaves the screen that started it. If the process
+ * dies part way, [backfill] at the next start picks up where it left off,
+ * since only films still missing details are fetched.
+ */
+class FilmDetailsSync(
+    private val scope: CoroutineScope,
+    private val trackedList: suspend (trackedPersonId: Long) -> TrackedPerson?,
+    private val listIdsMissingDetails: Flow<List<Long>>,
+    private val fillMissingFilmDetails: suspend (personId: Int, department: String) -> TmdbResult<Int>,
+    private val log: (String) -> Unit = {},
+) {
+    private val jobs = mutableMapOf<Long, Job>()
+    private val _states = MutableStateFlow<Map<Long, DetailsSyncState>>(emptyMap())
+
+    /** Lists with a fetch running or failed, by list id. A list missing here is idle. */
+    val states: StateFlow<Map<Long, DetailsSyncState>> = _states.asStateFlow()
+
+    fun state(trackedPersonId: Long): Flow<DetailsSyncState?> = states.map { it[trackedPersonId] }
+
+    /** Fetches whatever this list is missing. Does nothing if a fetch for it is already running. */
+    fun enqueue(trackedPersonId: Long) {
+        synchronized(jobs) {
+            if (jobs[trackedPersonId]?.isActive == true) return
+            _states.update { it + (trackedPersonId to DetailsSyncState.Running) }
+            jobs[trackedPersonId] = scope.launch { run(trackedPersonId) }
+        }
+    }
+
+    /** Starts a fetch for every list that has films without details, e.g. lists added before this existed. */
+    fun backfill() {
+        scope.launch { listIdsMissingDetails.first().forEach(::enqueue) }
+    }
+
+    private suspend fun run(trackedPersonId: Long) {
+        val list = trackedList(trackedPersonId)
+        val result = if (list == null) TmdbResult.Success(0) else fillMissingFilmDetails(list.personId, list.department)
+        log("List $trackedPersonId details: $result")
+        _states.update { states ->
+            when (result) {
+                is TmdbResult.Success -> states - trackedPersonId
+                is TmdbResult.Failure -> states + (trackedPersonId to DetailsSyncState.Failed(result.error))
+            }
+        }
+    }
+}

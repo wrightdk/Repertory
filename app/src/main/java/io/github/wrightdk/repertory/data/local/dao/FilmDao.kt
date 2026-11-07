@@ -26,15 +26,37 @@ interface FilmDao {
     @Query("SELECT * FROM film WHERE mediaType = :mediaType AND tmdbId = :tmdbId")
     fun observe(mediaType: MediaType, tmdbId: Int): Flow<Film?>
 
-    /** Movies credited to [personId] whose `/movie/{id}` details have never been fetched. */
+    /** Every movie in one list ([personId] in [department]), once each. */
     @Query(
         """
-        SELECT DISTINCT film.tmdbId FROM film
+        SELECT DISTINCT film.* FROM film
         JOIN credit ON credit.mediaType = film.mediaType AND credit.filmId = film.tmdbId
-        WHERE credit.personId = :personId AND film.mediaType = 'MOVIE' AND film.detailsCachedAt IS NULL
+        WHERE credit.personId = :personId AND credit.department = :department AND film.mediaType = 'MOVIE'
         """
     )
-    suspend fun movieIdsMissingDetails(personId: Int): List<Int>
+    suspend fun listMovies(personId: Int, department: String): List<Film>
+
+    /** How many movies in one list have never had their `/movie/{id}` details fetched. */
+    @Query(
+        """
+        SELECT COUNT(DISTINCT film.tmdbId) FROM film
+        JOIN credit ON credit.mediaType = film.mediaType AND credit.filmId = film.tmdbId
+        WHERE credit.personId = :personId AND credit.department = :department
+            AND film.mediaType = 'MOVIE' AND film.detailsCachedAt IS NULL
+        """
+    )
+    fun observeMissingDetailsCount(personId: Int, department: String): Flow<Int>
+
+    /** Ids of the lists that have at least one movie whose details have never been fetched. */
+    @Query(
+        """
+        SELECT DISTINCT tracked_person.id FROM tracked_person
+        JOIN credit ON credit.personId = tracked_person.personId AND credit.department = tracked_person.department
+        JOIN film ON film.mediaType = credit.mediaType AND film.tmdbId = credit.filmId
+        WHERE film.mediaType = 'MOVIE' AND film.detailsCachedAt IS NULL
+        """
+    )
+    fun observeListIdsMissingDetails(): Flow<List<Long>>
 
     /**
      * Every film [personId] is credited on in [department], one row per credit
