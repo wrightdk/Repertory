@@ -84,6 +84,10 @@
     <!-- Filmography -->
     <string name="on_your_list">On your list</string>
     <string name="on_your_list_description">On your list. Tap to remove</string>
+    <string name="remove_list_title">Remove %1$s as %2$s from your list?</string>
+    <string name="remove_list_body">Films you’ve ticked stay saved and will show again if you add them back.</string>
+    <string name="remove_list_confirm">Remove</string>
+    <string name="removed_list">Removed %1$s as %2$s</string>
     <string name="progress_of">of %1$d</string>
     <string name="progress_percent">%1$d%%</string>
     <string name="progress_percent_none">—</string>

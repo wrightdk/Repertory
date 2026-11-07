@@ -37,6 +37,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -80,6 +82,9 @@ import java.time.ZoneId
 /** "Your list", from design/home-*.png, and the first-launch screen from design/home-firstlaunch-*.png. */
 @Composable
 fun HomeScreen(
+    /** Shown once as a snackbar ("Removed Michael Caine as Actor"), then [onMessageShown]. */
+    message: String?,
+    onMessageShown: () -> Unit,
     onAddPerson: () -> Unit,
     onOpenList: (trackedPersonId: Long) -> Unit,
     onSuggestion: (personId: Int) -> Unit,
@@ -89,9 +94,17 @@ fun HomeScreen(
     val viewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory(context.appContainer))
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val listQuery by viewModel.listQuery.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(message) {
+        if (message != null) {
+            snackbar.showSnackbar(message)
+            onMessageShown()
+        }
+    }
 
     HomeScreen(
         state = state,
+        snackbar = snackbar,
         listQuery = listQuery,
         onListQuery = viewModel::setListQuery,
         onOpenListSearch = viewModel::openListSearch,
@@ -107,6 +120,7 @@ fun HomeScreen(
 @Composable
 private fun HomeScreen(
     state: HomeUiState,
+    snackbar: SnackbarHostState,
     listQuery: String?,
     onListQuery: (String) -> Unit,
     onOpenListSearch: () -> Unit,
@@ -147,6 +161,7 @@ private fun HomeScreen(
                 )
             }
         },
+        snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             if (hasLists) {
                 ExtendedFloatingActionButton(

@@ -20,6 +20,8 @@ import java.time.LocalDate
 
 data class FilmographyHeader(
     val name: String,
+    /** "Director", for "Remove … as Director from your list?". */
+    val role: String,
     /** "Director, 1928–1999", "Actor, born 1933", or just "Director" with no dates. */
     val subtitle: String,
     val photoUrl: String?,
@@ -97,6 +99,7 @@ data class FilmographyContent(
 internal fun filmographyHeader(person: Person, department: String, images: ImageConfig, photoMinWidthPx: Int) =
     FilmographyHeader(
         name = person.name,
+        role = roleLabel(department),
         subtitle = listOfNotNull(roleLabel(department), lifeSpan(person.birthday, person.deathday)).joinToString(", "),
         photoUrl = images.profileUrl(person.profilePath, photoMinWidthPx),
     )

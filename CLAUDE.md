@@ -100,7 +100,7 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - Unreleased films sit inline in date order with an "Unreleased, due 26 Nov 2026" label and a dashed circle that can't be ticked. No separate upcoming section.
    - First open of a list fetches from TMDB ("Fetching filmography from TMDB…" with skeleton rows), then it's cached.
    - The count must be final when first shown. Adding a list fetches every film's details (runtime, status) in the background (`FilmDetailsSync`: rate-limited, retried, resumed at app start for lists that never finished). Until they're all in, the count, tally and filter line show a loading state; if the fetch stops, an error with "Try again".
-5. **Remove from your list**: dialog "Remove Michael Caine as Actor from your list?" with Cancel / Remove, then home with a snackbar ("Removed Michael Caine as Actor"). The mockup's body copy says ticked films "will be lost"; that's wrong. The copy should say ticked films stay saved (see Core concepts).
+5. **Remove from your list**: dialog "Remove Michael Caine as Actor from your list?" with "Films you’ve ticked stay saved and will show again if you add them back." and Cancel / Remove, then home with a snackbar ("Removed Michael Caine as Actor"). The mockup's body copy ("will be lost") is wrong and not used (see Core concepts). Removing deletes only the `TrackedPerson` row; the list's own filter override goes with it.
 6. **Filters**
    - Categories: Shorts (40 minutes or less), TV (series, TV films and specials), Documentaries (non-fiction features), Appearances as self (interviews, making-ofs, talk shows), Minor roles (small or uncredited parts). Each switch means "show".
    - Rules are in "Filter rules" below.

@@ -24,6 +24,10 @@ interface TrackedPersonDao {
     @Delete
     suspend fun delete(trackedPerson: TrackedPerson)
 
+    /** Removes the list only. Viewings are keyed by film and stay. */
+    @Query("DELETE FROM tracked_person WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
     @Query("SELECT * FROM tracked_person WHERE id = :id")
     fun observe(id: Long): Flow<TrackedPerson?>
 

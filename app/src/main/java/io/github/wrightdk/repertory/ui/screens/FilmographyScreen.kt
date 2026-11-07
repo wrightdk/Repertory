@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,19 +45,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -67,6 +77,7 @@ import io.github.wrightdk.repertory.ui.components.FilmPoster
 import io.github.wrightdk.repertory.ui.components.PersonPhoto
 import io.github.wrightdk.repertory.ui.components.dashedOutline
 import io.github.wrightdk.repertory.ui.components.skeletonPulse
+import io.github.wrightdk.repertory.ui.theme.Scrim
 import io.github.wrightdk.repertory.ui.theme.repertoryColors
 import io.github.wrightdk.repertory.ui.theme.serif
 import io.github.wrightdk.repertory.ui.theme.spacing
@@ -80,6 +91,8 @@ fun FilmographyScreen(
     trackedPersonId: Long,
     onBack: () -> Unit,
     onFilmSelected: (mediaType: MediaType, filmId: Int) -> Unit,
+    /** After removing the list; [message] is for Home's snackbar ("Removed Michael Caine as Actor"). */
+    onRemoved: (message: String) -> Unit,
 ) {
     val context = LocalContext.current
     val viewModel: FilmographyViewModel = viewModel(
@@ -90,6 +103,7 @@ fun FilmographyScreen(
     val resources = LocalResources.current
     val snackbar = remember { SnackbarHostState() }
     var filterSheetOpen by rememberSaveable { mutableStateOf(false) }
+    var removeDialogOpen by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(viewModel) {
         // collectLatest: a new tick replaces the snackbar showing, rather than queueing behind it.
         viewModel.tickedOff.collectLatest { t ->
@@ -109,7 +123,9 @@ fun FilmographyScreen(
                 title = {},
                 onBack = onBack,
                 actions = {
-                    if (state.body != FilmographyBody.Missing) OnYourListButton(onClick = {})
+                    if (state.body != FilmographyBody.Missing) {
+                        OnYourListButton(onClick = { if (state.header != null) removeDialogOpen = true })
+                    }
                 },
             )
         },
@@ -136,7 +152,95 @@ fun FilmographyScreen(
             onDismiss = { filterSheetOpen = false },
         )
     }
+
+    val header = state.header
+    if (removeDialogOpen && header != null) {
+        RemoveListDialog(
+            name = header.name,
+            role = header.role,
+            onConfirm = {
+                removeDialogOpen = false
+                viewModel.remove()
+                onRemoved(resources.getString(R.string.removed_list, header.name, header.role))
+            },
+            onDismiss = { removeDialogOpen = false },
+        )
+    }
 }
+
+/**
+ * "Remove Michael Caine as Actor from your list?", from design/remove-person-*.
+ * The body says ticked films stay saved, unlike the mockup: removing a list
+ * never deletes viewings.
+ */
+@Composable
+private fun RemoveListDialog(name: String, role: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        // Draw the mockup's warm scrim (as the filter sheet does) in place of the platform's black dim.
+        // The window is edge to edge, so it also sets the status bar icons: keep them as the screen has them.
+        val view = LocalView.current
+        val window = (view.parent as? DialogWindowProvider)?.window
+        val lightBars = MaterialTheme.colorScheme.surface.luminance() > 0.5f
+        SideEffect {
+            window?.setDimAmount(0f)
+            window?.let { WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = lightBars }
+        }
+        val title = stringResource(R.string.remove_list_title, name, role)
+        Box(Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Scrim.copy(alpha = DialogScrimAlpha))
+                    .clickable(interactionSource = null, indication = null, onClick = onDismiss)
+                    .clearAndSetSemantics {},
+            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 28.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .padding(start = MaterialTheme.spacing.xl, end = MaterialTheme.spacing.xl, top = MaterialTheme.spacing.xl, bottom = MaterialTheme.spacing.lg)
+                    .semantics { paneTitle = title },
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.lg),
+            ) {
+                Text(title, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    stringResource(R.string.remove_list_body),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.5.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = MaterialTheme.spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.sm, Alignment.End),
+                ) {
+                    val buttonText = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp, lineHeight = 14.sp)
+                    TextButton(
+                        onClick = onDismiss,
+                        contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.lg),
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        modifier = Modifier.height(40.dp),
+                    ) { Text(stringResource(R.string.cancel), style = buttonText) }
+                    Button(
+                        onClick = onConfirm,
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                        modifier = Modifier.height(40.dp),
+                    ) { Text(stringResource(R.string.remove_list_confirm), style = buttonText) }
+                }
+            }
+        }
+    }
+}
+
+private const val DialogScrimAlpha = 0.4f
 
 @Composable
 private fun FilmographyList(
@@ -194,7 +298,7 @@ private fun FilmographyList(
     }
 }
 
-/** The outlined pill in the top bar. Opens the remove dialog once that exists. */
+/** The outlined pill in the top bar. Opens the remove dialog. */
 @Composable
 private fun OnYourListButton(onClick: () -> Unit) {
     val description = stringResource(R.string.on_your_list_description)

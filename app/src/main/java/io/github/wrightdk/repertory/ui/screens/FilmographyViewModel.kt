@@ -21,12 +21,14 @@ import io.github.wrightdk.repertory.data.remote.TmdbError
 import io.github.wrightdk.repertory.data.remote.TmdbResult
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -36,6 +38,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 sealed interface FilmographyBody {
@@ -105,6 +108,8 @@ class FilmographyViewModel(
     private val setFilterOverride: suspend (trackedPersonId: Long, filters: FilmographyFilters?) -> Unit,
     /** Global defaults from Settings. */
     private val defaultFilters: StateFlow<FilmographyFilters>,
+    /** Deletes the list only; viewings belong to films and stay. */
+    private val deleteList: suspend (trackedPersonId: Long) -> Unit,
     private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
 
@@ -125,6 +130,9 @@ class FilmographyViewModel(
     /** One event per film ticked from the list, for the snackbar. */
     val tickedOff: Flow<TickedOff> = _tickedOff.receiveAsFlow()
 
+    /** Set once the list is being removed, so the screen keeps its last state while it leaves. */
+    @Volatile private var removing = false
+
     val uiState: StateFlow<FilmographyUiState> = trackedPerson.flatMapLatest { tp ->
         if (tp == null) {
             flowOf(FilmographyUiState(body = FilmographyBody.Missing))
@@ -144,7 +152,9 @@ class FilmographyViewModel(
                 details,
             ) { (p, credits), (seen, defaults), config, l, d -> state(tp, p, credits, seen, defaults, config, l, d) }
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FilmographyUiState())
+    }
+        .filter { !(removing && it.body == FilmographyBody.Missing) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FilmographyUiState())
 
     init {
         viewModelScope.launch { images.value = imageConfig() }
@@ -191,6 +201,15 @@ class FilmographyViewModel(
     /** Drops this list's own filters so it follows the defaults from Settings again. */
     fun useDefaults() {
         viewModelScope.launch { setFilterOverride(trackedPersonId, null) }
+    }
+
+    /**
+     * Removes the list (not its ticked films) from "On your list". The delete
+     * finishes even if the screen leaves straight away, as it does.
+     */
+    fun remove() {
+        removing = true
+        viewModelScope.launch { withContext(NonCancellable) { deleteList(trackedPersonId) } }
     }
 
     private fun reload() {
@@ -270,6 +289,7 @@ class FilmographyViewModel(
                     touchList = { db.trackedPersonDao().touch(it, System.currentTimeMillis()) },
                     setFilterOverride = db.trackedPersonDao()::setFilterOverride,
                     defaultFilters = container.settings.filterDefaults,
+                    deleteList = db.trackedPersonDao()::deleteById,
                 )
             }
         }
