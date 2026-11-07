@@ -4,7 +4,9 @@ import android.content.Context
 import android.util.Log
 import io.github.wrightdk.repertory.data.FilmDetailsSync
 import io.github.wrightdk.repertory.data.SettingsStore
+import io.github.wrightdk.repertory.data.Suggestion
 import io.github.wrightdk.repertory.data.TmdbRepository
+import io.github.wrightdk.repertory.data.parseSuggestions
 import io.github.wrightdk.repertory.data.local.RepertoryDatabase
 import io.github.wrightdk.repertory.data.remote.ApiKeyProvider
 import io.github.wrightdk.repertory.data.remote.TmdbClient
@@ -14,6 +16,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 
 /**
  * Manual dependency wiring. One instance lives in [RepertoryApplication].
@@ -58,5 +61,14 @@ class AppContainer(context: Context) {
             fillMissingFilmDetails = tmdbRepository::fillMissingFilmDetails,
             log = { Log.i("Repertory", it) },
         )
+    }
+
+    /** The people offered on the empty Home screen, from `assets/suggestions.json` (see `scripts/`). */
+    suspend fun suggestions(): List<Suggestion> = withContext(Dispatchers.IO) {
+        appContext.assets.open(SUGGESTIONS_ASSET).bufferedReader().use { parseSuggestions(it.readText()) }
+    }
+
+    private companion object {
+        const val SUGGESTIONS_ASSET = "suggestions.json"
     }
 }

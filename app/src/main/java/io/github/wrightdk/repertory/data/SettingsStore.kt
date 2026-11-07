@@ -8,9 +8,12 @@ import kotlinx.coroutines.flow.asStateFlow
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
+/** How Home orders the lists, from the sort chips. */
+enum class HomeSort { NAME, PROGRESS, RECENT }
+
 /**
- * App-wide preferences from Settings: the default filters every list follows
- * unless it has its own, and the theme. Small and read at startup (the theme
+ * App-wide preferences: from Settings, the default filters every list follows
+ * unless it has its own, and the theme; from Home, the chosen sort. Small and read at startup (the theme
  * must be known before the first frame), so plain SharedPreferences rather
  * than Room. One instance, in [io.github.wrightdk.repertory.AppContainer].
  */
@@ -21,6 +24,9 @@ class SettingsStore(private val prefs: SharedPreferences) {
 
     private val _themeMode = MutableStateFlow(readTheme())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
+    private val _homeSort = MutableStateFlow(readHomeSort())
+    val homeSort: StateFlow<HomeSort> = _homeSort.asStateFlow()
 
     fun setFilterDefaults(filters: FilmographyFilters) {
         prefs.edit()
@@ -38,6 +44,11 @@ class SettingsStore(private val prefs: SharedPreferences) {
         _themeMode.value = mode
     }
 
+    fun setHomeSort(sort: HomeSort) {
+        prefs.edit().putString(KEY_HOME_SORT, sort.name).apply()
+        _homeSort.value = sort
+    }
+
     private fun readFilters(): FilmographyFilters {
         val d = FilmographyFilters.DEFAULTS
         return FilmographyFilters(
@@ -52,6 +63,9 @@ class SettingsStore(private val prefs: SharedPreferences) {
     private fun readTheme(): ThemeMode =
         ThemeMode.entries.firstOrNull { it.name == prefs.getString(KEY_THEME, null) } ?: ThemeMode.SYSTEM
 
+    private fun readHomeSort(): HomeSort =
+        HomeSort.entries.firstOrNull { it.name == prefs.getString(KEY_HOME_SORT, null) } ?: HomeSort.NAME
+
     companion object {
         const val PREFS_NAME = "settings"
         private const val KEY_SHORTS = "filter_show_shorts"
@@ -60,5 +74,6 @@ class SettingsStore(private val prefs: SharedPreferences) {
         private const val KEY_SELF = "filter_show_self"
         private const val KEY_MINOR_ROLES = "filter_show_minor_roles"
         private const val KEY_THEME = "theme"
+        private const val KEY_HOME_SORT = "home_sort"
     }
 }

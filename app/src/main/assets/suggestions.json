@@ -1,0 +1,582 @@
+[
+  {
+    "id": 130030,
+    "name": "Chantal Akerman",
+    "department": "Directing"
+  },
+  {
+    "id": 309,
+    "name": "Pedro Almodóvar",
+    "department": "Directing"
+  },
+  {
+    "id": 4762,
+    "name": "Paul Thomas Anderson",
+    "department": "Directing"
+  },
+  {
+    "id": 5655,
+    "name": "Wes Anderson",
+    "department": "Directing"
+  },
+  {
+    "id": 6648,
+    "name": "Ingmar Bergman",
+    "department": "Directing"
+  },
+  {
+    "id": 14392,
+    "name": "Kathryn Bigelow",
+    "department": "Directing"
+  },
+  {
+    "id": 21684,
+    "name": "Bong Joon Ho",
+    "department": "Directing"
+  },
+  {
+    "id": 793,
+    "name": "Luis Buñuel",
+    "department": "Directing"
+  },
+  {
+    "id": 10757,
+    "name": "Jane Campion",
+    "department": "Directing"
+  },
+  {
+    "id": 1223,
+    "name": "Joel Coen",
+    "department": "Directing"
+  },
+  {
+    "id": 1776,
+    "name": "Francis Ford Coppola",
+    "department": "Directing"
+  },
+  {
+    "id": 1769,
+    "name": "Sofia Coppola",
+    "department": "Directing"
+  },
+  {
+    "id": 9888,
+    "name": "Claire Denis",
+    "department": "Directing"
+  },
+  {
+    "id": 929825,
+    "name": "Ava DuVernay",
+    "department": "Directing"
+  },
+  {
+    "id": 2725,
+    "name": "Rainer Werner Fassbinder",
+    "department": "Directing"
+  },
+  {
+    "id": 4415,
+    "name": "Federico Fellini",
+    "department": "Directing"
+  },
+  {
+    "id": 7467,
+    "name": "David Fincher",
+    "department": "Directing"
+  },
+  {
+    "id": 8500,
+    "name": "John Ford",
+    "department": "Directing"
+  },
+  {
+    "id": 45400,
+    "name": "Greta Gerwig",
+    "department": "Directing"
+  },
+  {
+    "id": 3776,
+    "name": "Jean-Luc Godard",
+    "department": "Directing"
+  },
+  {
+    "id": 6011,
+    "name": "Michael Haneke",
+    "department": "Directing"
+  },
+  {
+    "id": 6818,
+    "name": "Werner Herzog",
+    "department": "Directing"
+  },
+  {
+    "id": 2636,
+    "name": "Alfred Hitchcock",
+    "department": "Directing"
+  },
+  {
+    "id": 92784,
+    "name": "Barry Jenkins",
+    "department": "Directing"
+  },
+  {
+    "id": 119294,
+    "name": "Abbas Kiarostami",
+    "department": "Directing"
+  },
+  {
+    "id": 1126,
+    "name": "Krzysztof Kieślowski",
+    "department": "Directing"
+  },
+  {
+    "id": 25645,
+    "name": "Hirokazu Kore-eda",
+    "department": "Directing"
+  },
+  {
+    "id": 240,
+    "name": "Stanley Kubrick",
+    "department": "Directing"
+  },
+  {
+    "id": 5026,
+    "name": "Akira Kurosawa",
+    "department": "Directing"
+  },
+  {
+    "id": 5281,
+    "name": "Spike Lee",
+    "department": "Directing"
+  },
+  {
+    "id": 4385,
+    "name": "Sergio Leone",
+    "department": "Directing"
+  },
+  {
+    "id": 5602,
+    "name": "David Lynch",
+    "department": "Directing"
+  },
+  {
+    "id": 608,
+    "name": "Hayao Miyazaki",
+    "department": "Directing"
+  },
+  {
+    "id": 525,
+    "name": "Christopher Nolan",
+    "department": "Directing"
+  },
+  {
+    "id": 95501,
+    "name": "Yasujirō Ozu",
+    "department": "Directing"
+  },
+  {
+    "id": 10099,
+    "name": "Park Chan-wook",
+    "department": "Directing"
+  },
+  {
+    "id": 291263,
+    "name": "Jordan Peele",
+    "department": "Directing"
+  },
+  {
+    "id": 83287,
+    "name": "Lynne Ramsay",
+    "department": "Directing"
+  },
+  {
+    "id": 12160,
+    "name": "Satyajit Ray",
+    "department": "Directing"
+  },
+  {
+    "id": 56383,
+    "name": "Kelly Reichardt",
+    "department": "Directing"
+  },
+  {
+    "id": 68813,
+    "name": "Céline Sciamma",
+    "department": "Directing"
+  },
+  {
+    "id": 1032,
+    "name": "Martin Scorsese",
+    "department": "Directing"
+  },
+  {
+    "id": 488,
+    "name": "Steven Spielberg",
+    "department": "Directing"
+  },
+  {
+    "id": 138,
+    "name": "Quentin Tarantino",
+    "department": "Directing"
+  },
+  {
+    "id": 8452,
+    "name": "Andrei Tarkovsky",
+    "department": "Directing"
+  },
+  {
+    "id": 1650,
+    "name": "François Truffaut",
+    "department": "Directing"
+  },
+  {
+    "id": 6817,
+    "name": "Agnès Varda",
+    "department": "Directing"
+  },
+  {
+    "id": 137427,
+    "name": "Denis Villeneuve",
+    "department": "Directing"
+  },
+  {
+    "id": 40,
+    "name": "Orson Welles",
+    "department": "Directing"
+  },
+  {
+    "id": 3146,
+    "name": "Billy Wilder",
+    "department": "Directing"
+  },
+  {
+    "id": 12453,
+    "name": "Wong Kar-wai",
+    "department": "Directing"
+  },
+  {
+    "id": 1395183,
+    "name": "Chloé Zhao",
+    "department": "Directing"
+  },
+  {
+    "id": 1137,
+    "name": "Juliette Binoche",
+    "department": "Acting"
+  },
+  {
+    "id": 112,
+    "name": "Cate Blanchett",
+    "department": "Acting"
+  },
+  {
+    "id": 4110,
+    "name": "Humphrey Bogart",
+    "department": "Acting"
+  },
+  {
+    "id": 3084,
+    "name": "Marlon Brando",
+    "department": "Acting"
+  },
+  {
+    "id": 3895,
+    "name": "Michael Caine",
+    "department": "Acting"
+  },
+  {
+    "id": 5918933,
+    "name": "Maggie Cheung",
+    "department": "Acting"
+  },
+  {
+    "id": 1892,
+    "name": "Matt Damon",
+    "department": "Acting"
+  },
+  {
+    "id": 3380,
+    "name": "Bette Davis",
+    "department": "Acting"
+  },
+  {
+    "id": 19492,
+    "name": "Viola Davis",
+    "department": "Acting"
+  },
+  {
+    "id": 11856,
+    "name": "Daniel Day-Lewis",
+    "department": "Acting"
+  },
+  {
+    "id": 380,
+    "name": "Robert De Niro",
+    "department": "Acting"
+  },
+  {
+    "id": 2638,
+    "name": "Cary Grant",
+    "department": "Acting"
+  },
+  {
+    "id": 31,
+    "name": "Tom Hanks",
+    "department": "Acting"
+  },
+  {
+    "id": 1932,
+    "name": "Audrey Hepburn",
+    "department": "Acting"
+  },
+  {
+    "id": 6598,
+    "name": "Katharine Hepburn",
+    "department": "Acting"
+  },
+  {
+    "id": 17882,
+    "name": "Isabelle Huppert",
+    "department": "Acting"
+  },
+  {
+    "id": 1337,
+    "name": "Tony Leung Chiu-wai",
+    "department": "Acting"
+  },
+  {
+    "id": 16757,
+    "name": "Sophia Loren",
+    "department": "Acting"
+  },
+  {
+    "id": 5676,
+    "name": "Marcello Mastroianni",
+    "department": "Acting"
+  },
+  {
+    "id": 3910,
+    "name": "Frances McDormand",
+    "department": "Acting"
+  },
+  {
+    "id": 7450,
+    "name": "Toshirō Mifune",
+    "department": "Acting"
+  },
+  {
+    "id": 1231,
+    "name": "Julianne Moore",
+    "department": "Acting"
+  },
+  {
+    "id": 514,
+    "name": "Jack Nicholson",
+    "department": "Acting"
+  },
+  {
+    "id": 64,
+    "name": "Gary Oldman",
+    "department": "Acting"
+  },
+  {
+    "id": 1158,
+    "name": "Al Pacino",
+    "department": "Acting"
+  },
+  {
+    "id": 73421,
+    "name": "Joaquin Phoenix",
+    "department": "Acting"
+  },
+  {
+    "id": 4800,
+    "name": "Gena Rowlands",
+    "department": "Acting"
+  },
+  {
+    "id": 20738,
+    "name": "Song Kang-ho",
+    "department": "Acting"
+  },
+  {
+    "id": 854,
+    "name": "James Stewart",
+    "department": "Acting"
+  },
+  {
+    "id": 5064,
+    "name": "Meryl Streep",
+    "department": "Acting"
+  },
+  {
+    "id": 3063,
+    "name": "Tilda Swinton",
+    "department": "Acting"
+  },
+  {
+    "id": 5292,
+    "name": "Denzel Washington",
+    "department": "Acting"
+  },
+  {
+    "id": 3569,
+    "name": "Néstor Almendros",
+    "department": "Camera"
+  },
+  {
+    "id": 151,
+    "name": "Roger Deakins",
+    "department": "Camera"
+  },
+  {
+    "id": 1357,
+    "name": "Christopher Doyle",
+    "department": "Camera"
+  },
+  {
+    "id": 14196,
+    "name": "Agnès Godard",
+    "department": "Camera"
+  },
+  {
+    "id": 492,
+    "name": "Janusz Kamiński",
+    "department": "Camera"
+  },
+  {
+    "id": 4185,
+    "name": "Emmanuel Lubezki",
+    "department": "Camera"
+  },
+  {
+    "id": 1632,
+    "name": "Robby Müller",
+    "department": "Camera"
+  },
+  {
+    "id": 11905,
+    "name": "Sven Nykvist",
+    "department": "Camera"
+  },
+  {
+    "id": 7202,
+    "name": "Vittorio Storaro",
+    "department": "Camera"
+  },
+  {
+    "id": 74401,
+    "name": "Hoyte van Hoytema",
+    "department": "Camera"
+  },
+  {
+    "id": 3097,
+    "name": "Gordon Willis",
+    "department": "Camera"
+  },
+  {
+    "id": 9747,
+    "name": "Jean-Claude Carrière",
+    "department": "Writing"
+  },
+  {
+    "id": 31498,
+    "name": "Paddy Chayefsky",
+    "department": "Writing"
+  },
+  {
+    "id": 9248,
+    "name": "Nora Ephron",
+    "department": "Writing"
+  },
+  {
+    "id": 348,
+    "name": "William Goldman",
+    "department": "Writing"
+  },
+  {
+    "id": 4341,
+    "name": "Ben Hecht",
+    "department": "Writing"
+  },
+  {
+    "id": 202,
+    "name": "Charlie Kaufman",
+    "department": "Writing"
+  },
+  {
+    "id": 13520,
+    "name": "Aaron Sorkin",
+    "department": "Writing"
+  },
+  {
+    "id": 11057,
+    "name": "Robert Towne",
+    "department": "Writing"
+  },
+  {
+    "id": 1551,
+    "name": "Philip Glass",
+    "department": "Sound"
+  },
+  {
+    "id": 1760,
+    "name": "Jerry Goldsmith",
+    "department": "Sound"
+  },
+  {
+    "id": 74333,
+    "name": "Jonny Greenwood",
+    "department": "Sound"
+  },
+  {
+    "id": 1178828,
+    "name": "Hildur Guðnadóttir",
+    "department": "Sound"
+  },
+  {
+    "id": 1045,
+    "name": "Bernard Herrmann",
+    "department": "Sound"
+  },
+  {
+    "id": 636,
+    "name": "Joe Hisaishi",
+    "department": "Sound"
+  },
+  {
+    "id": 10934,
+    "name": "Michel Legrand",
+    "department": "Sound"
+  },
+  {
+    "id": 1341726,
+    "name": "Mica Levi",
+    "department": "Sound"
+  },
+  {
+    "id": 1259,
+    "name": "Ennio Morricone",
+    "department": "Sound"
+  },
+  {
+    "id": 3098,
+    "name": "Nino Rota",
+    "department": "Sound"
+  },
+  {
+    "id": 11382,
+    "name": "Ryuichi Sakamoto",
+    "department": "Sound"
+  },
+  {
+    "id": 491,
+    "name": "John Williams",
+    "department": "Sound"
+  },
+  {
+    "id": 947,
+    "name": "Hans Zimmer",
+    "department": "Sound"
+  }
+]

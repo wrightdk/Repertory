@@ -35,6 +35,7 @@ fun RepertoryTopBar(
     onBack: (() -> Unit)?,
     actions: @Composable RowScope.() -> Unit = {},
     height: Dp = AppBarHeight,
+    backDescription: String = stringResource(R.string.back),
 ) {
     TopAppBar(
         // Without a back arrow Material insets the title 16dp; the design uses the 20dp gutter.
@@ -44,7 +45,7 @@ fun RepertoryTopBar(
                 IconButton(onClick = onBack) {
                     Icon(
                         painter = painterResource(R.drawable.ic_arrow_back),
-                        contentDescription = stringResource(R.string.back),
+                        contentDescription = backDescription,
                     )
                 }
             }

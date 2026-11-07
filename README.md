@@ -37,6 +37,14 @@ To check that the build's TMDB key works against the real API (the only test tha
 ./gradlew testDebugUnitTest -PtmdbLive --tests '*TmdbLiveKeyTest'
 ```
 
+## Suggestions
+
+The people offered on the empty Home screen are bundled in `app/src/main/assets/suggestions.json`, so the build never needs the network. To change them, edit the list in `scripts/generate_suggestions.py` and run it (it looks each name up on TMDB with the same key the build uses), then commit the JSON:
+
+```bash
+python3 scripts/generate_suggestions.py
+```
+
 ## Attribution
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
