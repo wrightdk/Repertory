@@ -4,6 +4,8 @@
 
     <!-- Only network use: TMDB API and image CDN. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- To resume film details fetches that stopped offline once a connection is back. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".RepertoryApplication"

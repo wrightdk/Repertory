@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -149,7 +148,8 @@ private fun ThemePicker(selected: ThemeMode, onPick: (ThemeMode) -> Unit) {
     SingleChoiceSegmentedButtonRow(
         Modifier
             .fillMaxWidth()
-            .height(40.dp)
+            // At least 40dp; taller with large text so the labels aren't cut off.
+            .heightIn(min = 40.dp)
             .clip(CircleShape)
             .border(1.dp, c.outline, CircleShape),
     ) {
@@ -168,7 +168,7 @@ private fun ThemePicker(selected: ThemeMode, onPick: (ThemeMode) -> Unit) {
                     inactiveBorderColor = c.outline,
                 ),
                 icon = { SegmentedButtonDefaults.Icon(active = mode == selected) },
-                modifier = Modifier.height(40.dp),
+                modifier = Modifier.heightIn(min = 40.dp),
             ) {
                 Text(
                     stringResource(label),

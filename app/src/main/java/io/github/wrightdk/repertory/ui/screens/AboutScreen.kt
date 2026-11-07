@@ -2,6 +2,8 @@ package io.github.wrightdk.repertory.ui.screens
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -35,8 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.wrightdk.repertory.BuildConfig
 import io.github.wrightdk.repertory.R
-import io.github.wrightdk.repertory.ui.components.placeholderStripes
-import io.github.wrightdk.repertory.ui.theme.repertoryColors
 import io.github.wrightdk.repertory.ui.theme.spacing
 
 private const val SOURCE_URL = "https://github.com/wrightdk/Repertory"
@@ -44,7 +46,7 @@ private const val SOURCE_URL = "https://github.com/wrightdk/Repertory"
 /**
  * From design/about-*.png: app name, version and blurb, the licences, the
  * source, and the TMDB attribution their terms require (logo less prominent
- * than ours). The app icon is still a placeholder.
+ * than ours).
  */
 @Composable
 fun AboutScreen(onBack: () -> Unit, onOpenLicence: (LicenceKind) -> Unit) {
@@ -66,7 +68,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenLicence: (LicenceKind) -> Unit) {
                     modifier = Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.xl, bottom = 28.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.sm),
                 ) {
-                    AppIconPlaceholder(Modifier.padding(bottom = spacing.md))
+                    AppIcon(Modifier.padding(bottom = spacing.md))
                     Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displaySmall.copy(lineHeight = 42.sp))
                     Text(
                         stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
@@ -116,16 +118,29 @@ fun AboutScreen(onBack: () -> Unit, onOpenLicence: (LicenceKind) -> Unit) {
     }
 }
 
-/** 64dp rounded square of placeholder stripes, where the app icon will go. */
+/**
+ * The launcher icon as a 64dp rounded square, built from its adaptive layers
+ * (painterResource can't load the adaptive-icon XML itself). The foreground is
+ * 108dp with 72dp visible, so it's drawn at 64 × 108 / 72 = 96dp and clipped.
+ * A hairline keeps the paper square visible on the paper background.
+ */
 @Composable
-private fun AppIconPlaceholder(modifier: Modifier = Modifier) {
-    val colors = MaterialTheme.repertoryColors
+private fun AppIcon(modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(16.dp)
     Box(
         modifier
             .size(64.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .placeholderStripes(colors.placeholderStripe, colors.placeholderStripeAlt),
-    )
+            .clip(shape)
+            .background(colorResource(R.color.ic_launcher_background))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painterResource(R.mipmap.ic_launcher_foreground),
+            contentDescription = null,
+            modifier = Modifier.requiredSize(96.dp),
+        )
+    }
 }
 
 /** Icon, label and supporting line: the mockup's 56dp row inside 12dp padding, so 80dp tall. */

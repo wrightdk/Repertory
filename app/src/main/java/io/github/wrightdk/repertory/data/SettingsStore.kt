@@ -18,7 +18,21 @@ enum class HomeSort { NAME, PROGRESS, RECENT }
  * must be known before the first frame), so plain SharedPreferences rather
  * than Room. One instance, in [io.github.wrightdk.repertory.AppContainer].
  */
-class SettingsStore(private val prefs: SharedPreferences) {
+class SettingsStore(
+    private val prefs: SharedPreferences,
+    /**
+     * Holds only the user's own TMDB key, in its own file ([KEY_PREFS_NAME]) so the
+     * backup rules can leave it out while the rest of the settings are backed up.
+     */
+    private val keyPrefs: SharedPreferences,
+) {
+    init {
+        // Keys saved before they had a file of their own move across once.
+        prefs.getString(KEY_OWN_TMDB_API_KEY, null)?.let { old ->
+            if (!keyPrefs.contains(KEY_OWN_TMDB_API_KEY)) keyPrefs.edit().putString(KEY_OWN_TMDB_API_KEY, old).apply()
+            prefs.edit().remove(KEY_OWN_TMDB_API_KEY).apply()
+        }
+    }
 
     private val _filterDefaults = MutableStateFlow(readFilters())
     val filterDefaults: StateFlow<FilmographyFilters> = _filterDefaults.asStateFlow()
@@ -29,7 +43,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
     private val _homeSort = MutableStateFlow(readHomeSort())
     val homeSort: StateFlow<HomeSort> = _homeSort.asStateFlow()
 
-    private val _ownTmdbApiKey = MutableStateFlow(prefs.getString(KEY_OWN_TMDB_API_KEY, null)?.takeIf { it.isNotBlank() })
+    private val _ownTmdbApiKey = MutableStateFlow(keyPrefs.getString(KEY_OWN_TMDB_API_KEY, null)?.takeIf { it.isNotBlank() })
 
     /**
      * The user's own TMDB API key from Settings, or null to use the built-in one.
@@ -61,7 +75,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
     /** Saves the user's own TMDB key; null or blank goes back to the built-in key. */
     fun setOwnTmdbApiKey(key: String?) {
         val value = key?.trim()?.takeIf { it.isNotEmpty() }
-        prefs.edit().apply { if (value == null) remove(KEY_OWN_TMDB_API_KEY) else putString(KEY_OWN_TMDB_API_KEY, value) }.apply()
+        keyPrefs.edit().apply { if (value == null) remove(KEY_OWN_TMDB_API_KEY) else putString(KEY_OWN_TMDB_API_KEY, value) }.apply()
         _ownTmdbApiKey.value = value
     }
 
@@ -84,6 +98,9 @@ class SettingsStore(private val prefs: SharedPreferences) {
 
     companion object {
         const val PREFS_NAME = "settings"
+
+        /** Left out of backups by `res/xml/backup_rules.xml` and `data_extraction_rules.xml`. */
+        const val KEY_PREFS_NAME = "own_tmdb_key"
         private const val KEY_SHORTS = "filter_show_shorts"
         private const val KEY_TV = "filter_show_tv"
         private const val KEY_DOCUMENTARIES = "filter_show_documentaries"

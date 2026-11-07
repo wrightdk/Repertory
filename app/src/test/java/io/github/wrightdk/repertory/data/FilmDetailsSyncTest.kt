@@ -87,6 +87,25 @@ class FilmDetailsSyncTest {
         assertEquals(emptyMap<Long, DetailsSyncState>(), sync.states.value)
     }
 
+    @Test fun `retryOffline tries again only the lists that stopped offline`() = runTest {
+        val offline = track(3895, "Acting")
+        val rejected = track(240, "Directing")
+        val sync = sync()
+        result = TmdbResult.Failure(TmdbError.NoNetwork)
+        sync.enqueue(offline)
+        runCurrent()
+        result = TmdbResult.Failure(TmdbError.InvalidApiKey)
+        sync.enqueue(rejected)
+        runCurrent()
+        calls.clear()
+
+        result = TmdbResult.Success(1)
+        sync.retryOffline()
+        runCurrent()
+        assertEquals(listOf(3895 to "Acting"), calls)
+        assertEquals(mapOf<Long, DetailsSyncState>(rejected to DetailsSyncState.Failed(TmdbError.InvalidApiKey)), sync.states.value)
+    }
+
     @Test fun `backfill starts every list still missing details`() = runTest {
         val caine = track(3895, "Acting")
         track(240, "Directing")

@@ -44,6 +44,7 @@ class AddPersonViewModelTest {
         RoleSummary("Writing", 12, "Screenplay"),
         RoleSummary("Production", 11, "Producer"),
         RoleSummary("Art", 2, "Production Design"),
+        RoleSummary("Crew", 3, "Thanks"),
     )
     private val trackCalls = mutableListOf<List<String>>()
 
@@ -78,10 +79,10 @@ class AddPersonViewModelTest {
         val vm = started()
         val c = vm.loaded
         assertEquals("1928–1999", c.header.lifeDates)
-        assertEquals(listOf("Directing", "Writing", "Production", "Art"), c.roles.map { it.department })
-        assertEquals(listOf(true, false, false, false), c.roles.map { it.checked })
-        // Mapped departments use the app's role label; others their commonest job.
-        assertEquals(listOf("Director", "Writer", "Producer", "Production Design"), c.roles.map { it.jobLabel })
+        // Only the seven roles the design names are offered: no Art, no Crew.
+        assertEquals(listOf("Directing", "Writing", "Production"), c.roles.map { it.department })
+        assertEquals(listOf(true, false, false), c.roles.map { it.checked })
+        assertEquals(listOf("Director", "Writer", "Producer"), c.roles.map { it.jobLabel })
         assertEquals(1, c.selectedCount)
     }
 
@@ -133,7 +134,7 @@ class AddPersonViewModelTest {
         person.value = kubrick
         refreshResult = TmdbResult.Failure(TmdbError.NoNetwork)
         val vm = started()
-        assertEquals(4, vm.loaded.roles.size)
+        assertEquals(3, vm.loaded.roles.size)
     }
 
     @Test fun `life dates`() {

@@ -79,7 +79,7 @@
     </plurals>
     <string name="choose_a_role">Choose a role</string>
     <string name="add_person_no_credits_title">No film credits yet.</string>
-    <string name="add_person_no_credits_body">TMDB doesn’t list any films or TV for this person, so there’s nothing to track.</string>
+    <string name="add_person_no_credits_body">TMDB doesn’t list any films or TV for them as a director, actor, writer, cinematographer, composer, producer or editor, so there’s nothing to track.</string>
     <string name="add_person_error_other_title">Couldn’t load this person.</string>
     <string name="add_person_error_other_body">Something went wrong at TMDB. Try again in a moment.</string>
     <string name="add_person_error_missing_title">TMDB no longer has this person.</string>
@@ -132,6 +132,8 @@
     <string name="ticked_off">Ticked off %1$s, %2$d of %3$d seen</string>
     <string name="ticked_off_no_count">Ticked off %1$s</string>
     <string name="progress_loading_description">Progress loading</string>
+    <string name="home_details_failed">Couldn’t load</string>
+    <string name="home_details_failed_description">Couldn’t finish loading film details. Open the list to try again.</string>
     <string name="fetching_film_details">Fetching film details from TMDB…</string>
     <string name="film_details_failed_title">Couldn’t finish loading film details.</string>
     <string name="film_details_failed_offline">Check your connection and try again. The count shows once every film is in.</string>
@@ -198,7 +200,7 @@
     <string name="settings_own_key_off">Off. Using the app’s built-in key.</string>
     <string name="settings_own_key_on">On. Key ending %1$s.</string>
     <string name="own_key_dialog_title">Your own TMDB API key</string>
-    <string name="own_key_dialog_body">If film data stops loading, you can use a free API key of your own from TMDB: sign up at themoviedb.org, then find it under Settings, API. It stays on this phone.</string>
+    <string name="own_key_dialog_body">If film data stops loading, you can use a free API key of your own from TMDB: sign up at themoviedb.org, then find it under Settings, API. It’s kept on this phone and left out of backups.</string>
     <string name="own_key_field_label">API key</string>
     <string name="own_key_save">Save</string>
     <string name="own_key_remove">Remove</string>
@@ -211,7 +213,7 @@
 
     <!-- About -->
     <string name="about_version">Version %1$s</string>
-    <string name="about_description">A notebook for working through filmographies. No accounts, no ads, no tracking. Your list stays on this phone.</string>
+    <string name="about_description">A notebook for working through filmographies. No accounts, no ads, no tracking. Your list is kept on this phone and never sent to us.</string>
     <string name="about_licence">Licence</string>
     <string name="about_licence_name">GNU General Public License v3.0</string>
     <string name="about_fonts">Fonts</string>

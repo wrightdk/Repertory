@@ -12,6 +12,7 @@ import io.github.wrightdk.repertory.data.local.entity.Person
 import io.github.wrightdk.repertory.data.remote.TmdbError
 import io.github.wrightdk.repertory.data.remote.TmdbResult
 import io.github.wrightdk.repertory.ui.creditJobLabel
+import io.github.wrightdk.repertory.ui.knownRoleLabel
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -138,7 +139,9 @@ class AddPersonViewModel(
         load.value = Load.Loading
         viewModelScope.launch {
             val refreshed = refreshPerson(personId)
-            val cached = roles(personId)
+            // Only the roles the app has a label for. The rest are mixed bags
+            // (TMDB's "Crew" is thanks, stunts, drivers…), not a body of work to track.
+            val cached = roles(personId).filter { knownRoleLabel(it.department) != null }
             load.value = when {
                 // Stale or partial cache beats an error: the user can still add from it.
                 refreshed is TmdbResult.Failure && cached.isEmpty() -> Load.Failed(refreshed.error)

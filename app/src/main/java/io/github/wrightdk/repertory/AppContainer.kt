@@ -32,7 +32,10 @@ class AppContainer(context: Context) {
 
     /** Read on the main thread at startup for the theme; a tiny prefs file, so that's fine. */
     val settings: SettingsStore by lazy {
-        SettingsStore(appContext.getSharedPreferences(SettingsStore.PREFS_NAME, Context.MODE_PRIVATE))
+        SettingsStore(
+            prefs = appContext.getSharedPreferences(SettingsStore.PREFS_NAME, Context.MODE_PRIVATE),
+            keyPrefs = appContext.getSharedPreferences(SettingsStore.KEY_PREFS_NAME, Context.MODE_PRIVATE),
+        )
     }
 
     // The user's own key from Settings wins over the built-in one. Read per

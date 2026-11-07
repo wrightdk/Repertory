@@ -58,10 +58,16 @@ class FilmDetailsSync(
         scope.launch { listIdsMissingDetails.first().forEach(::enqueue) }
     }
 
-    /** Tries every list whose fetch stopped again, e.g. once the user has set their own TMDB key. */
-    fun retryFailed() {
-        states.value.filterValues { it is DetailsSyncState.Failed }.keys.forEach(::enqueue)
+    /**
+     * Tries again every list whose fetch stopped with an error matching [which]
+     * (any error by default), e.g. once the user has set their own TMDB key.
+     */
+    fun retryFailed(which: (TmdbError) -> Boolean = { true }) {
+        states.value.filterValues { it is DetailsSyncState.Failed && which(it.error) }.keys.forEach(::enqueue)
     }
+
+    /** Tries again the lists that stopped for want of a connection. Called when the device gets one. */
+    fun retryOffline() = retryFailed { it == TmdbError.NoNetwork }
 
     private suspend fun run(trackedPersonId: Long) {
         val list = trackedList(trackedPersonId)

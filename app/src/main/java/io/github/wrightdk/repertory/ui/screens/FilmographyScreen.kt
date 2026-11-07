@@ -51,9 +51,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -556,11 +559,14 @@ private fun FilmRowItem(row: FilmRow, onToggle: () -> Unit, onOpen: () -> Unit) 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        val yearStyle = MaterialTheme.typography.bodyMedium.copy(lineHeight = 14.sp)
         Text(
             row.year?.toString().orEmpty(),
-            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 14.sp),
+            style = yearStyle,
             color = ink2,
-            modifier = Modifier.width(34.dp),
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.width(yearColumnWidth(yearStyle)),
         )
         FilmPoster(row.posterUrl, Modifier.size(width = 40.dp, height = 60.dp))
         Column(
@@ -585,6 +591,20 @@ private fun FilmRowItem(row: FilmRow, onToggle: () -> Unit, onOpen: () -> Unit) 
         }
         TickCircle(row, onToggle)
     }
+}
+
+/**
+ * The year column: 34dp as in the mockup, or wide enough for a four-digit year
+ * when large text needs more, so every row's poster still lines up.
+ */
+@Composable
+private fun yearColumnWidth(style: TextStyle): Dp {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val measured = remember(style, density) {
+        with(density) { measurer.measure("0000", style, maxLines = 1, softWrap = false).size.width.toDp() }
+    }
+    return maxOf(measured, 34.dp)
 }
 
 /** "Short, as Harry Palmer", "Documentary, 85 min", or null when there's nothing to say. */

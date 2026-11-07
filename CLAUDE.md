@@ -86,7 +86,7 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - Tapping a result opens Add to your list.
 3. **Add to your list**
    - Person header: photo, name, life dates ("1928–1999" or "b. 1983").
-   - "Track as" with "Each role is its own list with its own progress." Then one checkbox row per department from their credits, with a credit count ("12 credits as Writer"). The known-for department is pre-ticked unless already tracked.
+   - "Track as" with "Each role is its own list with its own progress." Then one checkbox row per department from their credits, with a credit count ("12 credits as Writer"). Only the seven departments with a role label (see Design) are offered; TMDB's others (Crew, Art, Visual Effects…) aren't. The known-for department is pre-ticked unless already tracked.
    - Roles already on the list show a bookmark icon and "Already on your list" in place of a checkbox.
    - Credit counts match what the list will show by default: they apply the global filter defaults from Settings (see Filter rules for the one gap, shorts), and a department whose count drops to zero isn't offered (`TmdbRepository.roles`).
    - Bottom button: "Add 1 list" / "Add N lists", or a disabled "Choose a role" when nothing is ticked. Adding opens the filmography of the first list added (decided: kept over the mockup's return to home with a snackbar); Back from there goes home.
@@ -117,7 +117,7 @@ The mockups in `design/` are the source of truth for v1. `screens.html` has the 
    - "Use your own TMDB API key" item (not in the design; see TMDB section), styled like the About row with an on/off line ("On. Key ending 1a2b."). Its dialog checks the key with TMDB before saving (`AppContainer.checkTmdbApiKey`) and catches a pasted v4 read access token; Remove goes back to the built-in key. Saving or removing retries any list whose details fetch stopped.
    - Key errors (401, or 429 after retries) on Search, Add to your list and Filmography say so plainly and offer "Use your own key" ("Change your key" once one is set), which opens Settings with the key dialog up (`ui/screens/TmdbErrors.kt`).
    - About row.
-9. **About**: app icon (placeholder for now) and name, version, "A notebook for working through filmographies. No accounts, no ads, no tracking. Your list stays on this phone.", Licence (GNU General Public License v3.0), Fonts (Newsreader and IBM Plex Sans, SIL OFL 1.1), Source code link, and a "Film data" section with the TMDB logo (`res/drawable/tmdb_logo.xml`, TMDB's official blue short logo, unaltered) and attribution line.
+9. **About**: app icon (drawn from the launcher icon's adaptive layers) and name, version, "A notebook for working through filmographies. No accounts, no ads, no tracking. Your list is kept on this phone and never sent to us.", Licence (GNU General Public License v3.0), Fonts (Newsreader and IBM Plex Sans, SIL OFL 1.1), Source code link, and a "Film data" section with the TMDB logo (`res/drawable/tmdb_logo.xml`, TMDB's official blue short logo, unaltered) and attribution line.
    - Licence and Fonts open the full text. The texts are copied from `LICENSE` and `third_party/fonts/*/OFL.txt` into assets at build time (`copyLicenceTexts` in `app/build.gradle.kts`), so there's one copy of each.
 
 ## Filter rules (agreed)

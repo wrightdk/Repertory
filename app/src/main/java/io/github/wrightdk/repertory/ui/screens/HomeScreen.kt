@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -164,9 +165,11 @@ private fun HomeScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
             if (hasLists) {
+                // Material hides the label text from screen readers and names the
+                // button after its icon, so the icon carries the label.
                 ExtendedFloatingActionButton(
                     onClick = onAddPerson,
-                    icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
+                    icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = stringResource(R.string.add_person)) },
                     text = { Text(stringResource(R.string.add_person), style = MaterialTheme.typography.labelLarge) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -251,12 +254,22 @@ private fun YourList(
     val today = remember { LocalDate.now() }
     val zone = remember { ZoneId.systemDefault() }
     Column(Modifier.fillMaxSize()) {
-        Column(Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.lg)) {
-            Text(stringResource(R.string.your_list), style = MaterialTheme.typography.displaySmall)
-            // The 32dp chips sit in 48dp touch targets: take the 8dp overhang off the
-            // mockup's 20dp above and 16dp below.
-            SortChips(sort, onSort, Modifier.padding(top = spacing.gutter - ChipTouchOverhang))
-        }
+        Text(
+            stringResource(R.string.your_list),
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.padding(start = spacing.gutter, end = spacing.gutter, top = spacing.lg),
+        )
+        // The 32dp chips sit in 48dp touch targets: take the 8dp overhang off the
+        // mockup's 20dp above and 16dp below. With large text the row scrolls
+        // sideways rather than cutting off the last chip.
+        SortChips(
+            sort,
+            onSort,
+            Modifier
+                .padding(top = spacing.gutter - ChipTouchOverhang)
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = spacing.gutter),
+        )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             // Room under the last row for the "Add person" button.
@@ -328,7 +341,7 @@ private fun SortChip(label: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Row(
             modifier = Modifier
-                .height(32.dp)
+                .heightIn(min = 32.dp)
                 .padding(start = if (selected) 8.dp else 12.dp, end = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -398,11 +411,21 @@ private fun ListRow(row: HomeRow, recency: Recency?, onClick: () -> Unit) {
 private fun SeenCount(row: HomeRow, style: TextStyle) {
     val progress = row.progress
     when {
+        progress == null && row.detailsFailed -> {
+            val description = stringResource(R.string.home_details_failed_description)
+            Text(
+                stringResource(R.string.home_details_failed),
+                style = style,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = description },
+            )
+        }
         progress == null -> {
             val loading = stringResource(R.string.progress_loading_description)
             Box(
                 Modifier
-                    .then(if (row.detailsFailed) Modifier else Modifier.skeletonPulse())
+                    .skeletonPulse()
                     .clearAndSetSemantics { contentDescription = loading }
                     .padding(vertical = 2.dp)
                     .size(width = 72.dp, height = 13.dp)
