@@ -15,8 +15,12 @@ data class AddPersonRoute(val personId: Int)
 @Serializable
 data class FilmographyRoute(val trackedPersonId: Long)
 
+/**
+ * One film, opened from the list [trackedPersonId] (for its credit line).
+ * [mediaType] is a [io.github.wrightdk.repertory.data.local.entity.MediaType] name.
+ */
 @Serializable
-data class FilmDetailRoute(val filmId: Int)
+data class FilmDetailRoute(val trackedPersonId: Long, val mediaType: String, val filmId: Int)
 
 @Serializable
 data object AboutRoute

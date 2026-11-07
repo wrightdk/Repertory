@@ -93,6 +93,31 @@
     <string name="film_details_failed_offline">Check your connection and try again. The count shows once every film is in.</string>
     <string name="ticked_off_all">%1$s — that’s all %2$d.</string>
 
+    <!-- Film detail -->
+    <string name="film_year_runtime">%1$d, %2$s</string>
+    <string name="credit_directed">Directed by %1$s</string>
+    <string name="credit_written">Written by %1$s</string>
+    <string name="credit_cinematography">Cinematography by %1$s</string>
+    <string name="credit_music">Music by %1$s</string>
+    <string name="credit_produced">Produced by %1$s</string>
+    <string name="credit_edited">Edited by %1$s</string>
+    <string name="credit_acted">%1$s as %2$s</string>
+    <string name="credit_other">%1$s, %2$s</string>
+    <string name="not_out_yet_due">Not out yet. Due %1$s. You can tick it off once it’s released.</string>
+    <string name="not_out_yet_undated">Not out yet. You can tick it off once it’s released.</string>
+    <string name="seen_description">Seen. Tap to mark as not seen</string>
+    <string name="date_seen_optional">Date seen (optional)</string>
+    <string name="choose_date">Choose date</string>
+    <string name="today">Today</string>
+    <string name="clear">Clear</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="counts_toward">Counts toward</string>
+    <string name="list_name">%1$s as %2$s</string>
+    <string name="list_progress">%1$d of %2$d</string>
+    <string name="film_missing_title">This film isn’t saved.</string>
+    <string name="film_missing_body">Go back and open it from one of your lists.</string>
+
     <!-- Filters: labels and descriptions shared by Settings and the per-list sheet -->
     <string name="filter_shorts">Shorts</string>
     <string name="filter_tv">TV</string>

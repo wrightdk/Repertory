@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.ui.screens.AboutScreen
 import io.github.wrightdk.repertory.ui.screens.AddPersonScreen
 import io.github.wrightdk.repertory.ui.screens.FilmDetailScreen
@@ -54,12 +55,19 @@ fun RepertoryNavHost() {
             FilmographyScreen(
                 trackedPersonId = route.trackedPersonId,
                 onBack = back,
-                onFilmSelected = { filmId -> navController.navigate(FilmDetailRoute(filmId)) },
+                onFilmSelected = { mediaType, filmId ->
+                    navController.navigate(FilmDetailRoute(route.trackedPersonId, mediaType.name, filmId))
+                },
             )
         }
         composable<FilmDetailRoute> { entry ->
             val route = entry.toRoute<FilmDetailRoute>()
-            FilmDetailScreen(filmId = route.filmId, onBack = back)
+            FilmDetailScreen(
+                trackedPersonId = route.trackedPersonId,
+                mediaType = MediaType.valueOf(route.mediaType),
+                filmId = route.filmId,
+                onBack = back,
+            )
         }
         composable<SettingsRoute> {
             SettingsScreen(onBack = back, onAbout = { navController.navigate(AboutRoute) })

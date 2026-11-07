@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import io.github.wrightdk.repertory.data.local.entity.FilmographyFilters
+import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.local.entity.TrackedPerson
 import kotlinx.coroutines.flow.Flow
 
@@ -65,6 +66,24 @@ interface TrackedPersonDao {
     /** The departments [personId] is already tracked in. */
     @Query("SELECT department FROM tracked_person WHERE personId = :personId")
     fun observeDepartments(personId: Int): Flow<List<String>>
+
+    /**
+     * Every list the film is in: its person has a credit on it in the list's
+     * department. Whether the list's filters show it is left to the caller.
+     */
+    @Query(
+        """
+        SELECT DISTINCT tracked_person.* FROM tracked_person
+        JOIN credit ON credit.personId = tracked_person.personId AND credit.department = tracked_person.department
+        WHERE credit.mediaType = :mediaType AND credit.filmId = :filmId
+        ORDER BY tracked_person.addedAt
+        """
+    )
+    fun observeListsWithFilm(mediaType: MediaType, filmId: Int): Flow<List<TrackedPerson>>
+
+    /** Marks each list as just updated, for the Recent sort. */
+    @Query("UPDATE tracked_person SET updatedAt = :now WHERE id IN (:ids)")
+    suspend fun touchAll(ids: List<Long>, now: Long)
 
     @Query("SELECT id FROM tracked_person WHERE personId = :personId AND department = :department")
     suspend fun idFor(personId: Int, department: String): Long?

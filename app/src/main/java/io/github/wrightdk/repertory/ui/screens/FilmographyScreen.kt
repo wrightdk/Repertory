@@ -61,6 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.wrightdk.repertory.R
 import io.github.wrightdk.repertory.appContainer
 import io.github.wrightdk.repertory.data.FilmCategory
+import io.github.wrightdk.repertory.data.local.entity.MediaType
 import io.github.wrightdk.repertory.data.remote.TmdbError
 import io.github.wrightdk.repertory.ui.components.FilmPoster
 import io.github.wrightdk.repertory.ui.components.PersonPhoto
@@ -78,7 +79,7 @@ import java.util.Locale
 fun FilmographyScreen(
     trackedPersonId: Long,
     onBack: () -> Unit,
-    onFilmSelected: (filmId: Int) -> Unit,
+    onFilmSelected: (mediaType: MediaType, filmId: Int) -> Unit,
 ) {
     val context = LocalContext.current
     val viewModel: FilmographyViewModel = viewModel(
@@ -120,7 +121,7 @@ fun FilmographyScreen(
             onRetryDetails = viewModel::retryDetails,
             onOpenFilters = { filterSheetOpen = true },
             onToggleSeen = viewModel::toggleSeen,
-            onOpen = { onFilmSelected(it.tmdbId) },
+            onOpen = { onFilmSelected(it.mediaType, it.tmdbId) },
             onRetry = viewModel::retry,
             modifier = Modifier.consumeWindowInsets(innerPadding),
         )
@@ -640,7 +641,7 @@ private fun LoadError(error: TmdbError, onRetry: () -> Unit) {
 /** "11 Mar 2022". English month abbreviations to match the rest of the (English-only) copy. */
 private val DateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
 
-private fun formatDate(date: LocalDate): String = date.format(DateFormat)
+internal fun formatDate(date: LocalDate): String = date.format(DateFormat)
 
 // Mockup values that fall between the theme's steps.
 private val NameStyle: TextStyle
