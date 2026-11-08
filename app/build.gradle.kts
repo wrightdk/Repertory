@@ -90,6 +90,12 @@ android {
             signingConfig = signingConfigs.findByName("upload")
         }
     }
+    dependenciesInfo {
+        // AGP's dependency list is encrypted with Google's key, which F-Droid
+        // rejects in an APK. Play still gets it from the bundle.
+        includeInApk = false
+        includeInBundle = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
